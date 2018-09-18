@@ -10,6 +10,10 @@ if ($_POST){
 	}
 	
 	$conf['CDR_url'] = xmlentities($_POST['CDR_url']);
+	if (!empty($_POST['CDR_file']))
+		$conf['CDR_file'] = xmlentities($_POST['CDR_file']);
+	else 
+		$conf['CDR_file'] = '@start_stamp@_@destination_number@_@caller_id_number@.wav';
 	$conf['CDR_debug'] = xmlentities($_POST['CDR_debug']);
 	$conf['default_password'] = xmlentities($_POST['default_password']);
 	$conf['sound_prefix'] = xmlentities($_POST['sound_prefix']);
@@ -60,6 +64,10 @@ else{
 		$modules_addcss = "inputline1";
 	else
 		$modules_addcss = "inputline";
+	if (isset($conf['CDR_file']))
+		$CDR_filecss = "inputline1";
+	else
+		$CDR_filecss = "inputline";
 }
 	
 if ($fail)
@@ -81,6 +89,8 @@ echo <<<HTML
 <td width=50%><span class="smallred smallsize-font">设置xmlCDR模块中 WEB提交是否开启调试跟踪，开启后会把信息写入系统根目录的日志</span></td></tr>
 <tr><td><em>CDR WEB提交地址：</em><input type="text" class="$CDR_urlcss" value="$conf[CDR_url]" name="CDR_url" size=45/></td>
 <td width=50%><span class="smallred smallsize-font">设置xmlCDR模块中 WEB提交CDR的url地址</span></td></tr>
+<tr><td><em>CDR 文件名定义：</em><input type="text" class="$CDR_filecss" value="$conf[CDR_file]" name="CDR_file" size=45/></td>
+<td width=50%><span class="smallred smallsize-font">xmlCDR文件名称格式，路径固定为 FS录音目录/年月日/，使用字段名，默认为@start_stamp@_@destination_number@_@caller_id_number@.wav</span></td></tr>
 <tr><td><em>默认语言：</em><input type="text" class="$default_languagecss" value="$conf[default_language]" name="default_language" size=45/></td>
 <td width=50%><span class="smallred smallsize-font">设置默认语言，切记freeswitch.xml需包含相应文件</span></td></tr>
 <tr><td><em>语音文件路径：</em><input type="text" class="$sound_prefixcss" value="$conf[sound_prefix]" name="sound_prefix" size=45/></td>
