@@ -5,6 +5,8 @@
 header("Content-type: text/html; charset=utf-8");
 
 include 'Shoudian_db.php';
+$file =__DIR__.'/.Config';
+$conf = @unserialize(file_get_contents($file));
 //----------------------显示---------------------------------
 $_SESSION['POST_submit_once']=0;
 
@@ -23,7 +25,7 @@ function showcodeS(sid,iid){\$.post( \"FS_error_code.php\", { SIP_reason_code: s
 </script></head><body><div id=\"win\"><h2 id=\"tt\"><span id=\"close\" onclick=\"$('#win').css('display','none')\" style=\"pading:5px;\"> × </span></h2>
     <p id=\"title\" class=\"act2\"></p>
 <audio id=\"player\" controls=\"controls\" src=\"\">你的浏览器不支持audio标签。</audio></div>";
-$count = 20;
+$count = 5;
 $getstr = "";
 $showget = "<span class='smallred smallsize-font'> ";
 $where = 'where 1 ';
@@ -50,6 +52,12 @@ if (!empty($_GET['viewrelation'])){
 				$enddate = $_GET['enddate'];
 			}
 	}
+	if (!empty($_GET['limit_ans'])){
+		$where .= "and `answer_epoch` > 0 ";
+		$getstr.= "&limit_ans=1";
+		$showget .=" 仅显示已应答话单 ";
+		$limit_ans_c = "checked=\"checked\" ";
+	}else $limit_ans_c = "";
 	if (!empty($_GET['phone']) && is_numeric ($_GET['phone'])){
 		$phone = $_GET['phone'];
 		$where .= "and `destination_number` like '%$phone%' ";
@@ -84,9 +92,13 @@ if (!empty($_GET['viewrelation'])){
 		$showget .= "（ $totle 条，$pages 页）</span>";
 	$result = $mysqli->query("select * from fs_xml_cdr $where ORDER BY start_stamp DESC LIMIT ".($p*$count).",$count");
 }
-	echo '<p class="pcenter" style="font-size:18pt;">CDR 通话详单  '.$showget.' <a style="font-size:10pt;" href="index.php">&raquo;&nbsp;返回主控</a></p><table class="tablegreen" width="90%" align="center"><th colspan=5><form method="get"><p style="text-align:center;">域：<input id="domain" name="domain" value="" size=10> 主叫id：<input id="phone0" name="phone0" value="" size=10> 被叫id：<label><input id="phone" name="phone"  value=""> 开始时间：<input id="startdate" name="startdate" value="'.$startdate.'" size="15"> 结束时间：<input id="enddate" name="enddate" value="'.$enddate.'" size=\"15\">
-  <input type="submit" value="确认"/></th>';
+	echo '<p class="pcenter" style="font-size:18pt;">CDR 通话详单  '.$showget.' <a style="font-size:10pt;" href="index.php">&raquo;&nbsp;返回主控</a></p><table class="tablegreen" width="90%" align="center"><th colspan=5><form method="get"><p style="text-align:center;">域：<input id="domain" name="domain" value="" size=10> 主叫id：<input id="phone0" name="phone0" value="" size=10> 被叫id：<label><input id="phone" name="phone"  value=""> 开始：<input id="startdate" name="startdate" value="'.$startdate.'" size="15"> 结束：<input id="enddate" name="enddate" value="'.$enddate.'" size="15"> <label><input id="limit_ans" name="limit_ans" value="1" type="checkbox" '.$limit_ans_c.' >仅显示已应答</label> &nbsp;  <input type="submit" value="确认"/></th>';
 	$i=0;
+	if (!isset($conf['CDR_file']))
+		$filename = '@start_stamp@_@destination_number@_@caller_id_number@.wav';
+	else 
+		$filename = $conf['CDR_file'];
+
 	while (($row = $result->fetch_array())!==false) {
 		if (!$row)
 			die('</table><p class=\'red\'><a href="?list=1&p='.($p-1<0?0:$p-1).$getstr.'">前一页</a> '.($p==0?1:$p+1).'  <a href="?p='.($p+1>$pages?$pages:$p+1).$getstr.'">下一页</a> 
@@ -121,11 +133,23 @@ if (!empty($_GET['viewrelation'])){
 			else $last_app = "";
 			$showuser =" $accountcode $context $extension_uuid $sip_gateway $last_app ";
 			$filestr = "";
-			if (!empty($row['answer_stamp']) && $row['answer_stamp']<>'1900-01-01 00:00:00'){
+			if (!empty($row['billsec'])){
 				$answertime =   "应答于 ".$row['answer_stamp']." 通话 $row[billsec] 秒  ($row[billmsec] 毫秒)";
-				$pathstr = str_replace("-", "",substr($row['start_stamp'],0,10));
-				$filestr = @$_SESSION['recordings_dir'].'/'.$pathstr.'/'.str_replace(array(" ",":"),"-", $row['start_stamp'])."_$row[orig_callee_number]_$row[orig_caller_number].wav";
-				$fileplay = '/files/'.$pathstr.'/'.str_replace(array(" ",":"),"-", $row['start_stamp'])."_$row[orig_callee_number]_$row[orig_caller_number].wav";
+				$pathstr = date("Ymd", $row['start_epoch']);
+				preg_match_all('|@([^@]*)@|',$filename,$nameparts);
+				if (is_array($nameparts[1]))
+					foreach ($nameparts[1] as $one){
+						if (in_array($one, ['start_stamp','end_stamp','answer_stamp'])){
+							$namefind[] = "@$one@";
+							$namerepl[] = str_replace(array(" ",":"),"-", $row[$one]);
+						}else{
+							$namefind[] = "@$one@";
+							$namerepl[] = $row[$one];
+						}
+				}
+				$filestr0 = str_replace($namefind,$namerepl,$filename);
+				$filestr = @$_SESSION['recordings_dir'].'/'.$pathstr.'/'.$filestr0;
+				$fileplay = '/files/'.$pathstr.'/'.$filestr0;
 				if (file_exists($filestr))
 					$filestr = "<button type='button' onclick='$(\"#win\").css(\"display\",\"block\");$(\"#title\").html(\" <b>主叫：</b>$row[orig_caller_number] <b>被叫：</b>$row[orig_callee_number]\");$(\"#player\").attr(\"src\",\"$fileplay\");'> 【播放语音】 </button>";
 				else
