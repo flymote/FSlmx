@@ -136,6 +136,7 @@ if (!empty($_GET['viewrelation'])){
 			if (!empty($row['billsec'])){
 				$answertime =   "应答于 ".$row['answer_stamp']." 通话 $row[billsec] 秒  ($row[billmsec] 毫秒)";
 				$pathstr = date("Ymd", $row['start_epoch']);
+				$namefind = $namerepl = array();
 				preg_match_all('|@([^@]*)@|',$filename,$nameparts);
 				if (is_array($nameparts[1]))
 					foreach ($nameparts[1] as $one){
