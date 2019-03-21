@@ -34,6 +34,7 @@ $where = 'where 1 ';
 $date = time();
 $startdate = date("Y-m-d H:i:s",$date-86400);
 $enddate = date("Y-m-d H:i:s",$date);
+$limit_ans_c = "";
 if (!empty($_GET['viewrelation'])){
 	$ids = explode(",",$_GET['viewrelation']);
 	$result = $mysqli->query("select * from fs_xml_cdr where uuid in ( '$ids[0]','$ids[1]')");
@@ -59,7 +60,7 @@ if (!empty($_GET['viewrelation'])){
 		$getstr.= "&limit_ans=1";
 		$showget .=" 仅显示已应答话单 ";
 		$limit_ans_c = "checked=\"checked\" ";
-	}else $limit_ans_c = "";
+	}
 	if (!empty($_GET['phone']) && is_numeric ($_GET['phone'])){
 		$phone = $_GET['phone'];
 		$where .= "and `destination_number` like '%$phone%' ";
@@ -147,28 +148,41 @@ if (!empty($_GET['viewrelation'])){
 			else $last_app = "";
 			$showuser =" $accountcode $context $extension_uuid $sip_gateway $last_app ";
 			$filestr = "";
-			if (!empty($row['billsec'])){
+			if (!empty($row['answer_epoch'])){
 				$answertime =   "应答于 ".substr($row['answer_stamp'],11)." 通话 $row[billsec] 秒  ($row[billmsec] 毫秒)";
 				$pathstr = date("Ymd", $row['start_epoch']);
-				$namefind = $namerepl = array();
+				$namefind = $namerepl = $namerepl1 = array();
 				preg_match_all('|@([^@]*)@|',$filename,$nameparts);
 				if (is_array($nameparts[1]))
 					foreach ($nameparts[1] as $one){
 						if (in_array($one, ['start_stamp','end_stamp','answer_stamp'])){
 							$namefind[] = "@$one@";
 							$namerepl[] = str_replace(array(" ",":"),"-", $row[$one]);
+							$tempone = substr($row[$one],-2) + 1; //提取秒钟并加1，针对某些因为保存录音时间延迟而产生的文件名错
+							$tempone = $tempone>59?'00':($tempone<10?"0$tempone":"$tempone");
+							$namerepl1[] = str_replace(array(" ",":"),"-", substr($row[$one],0,-2).$tempone);
 						}else{
 							$namefind[] = "@$one@";
 							$namerepl[] = $row[$one];
+							$namerepl1[] = $row[$one];
 						}
 				}
 				$filestr0 = str_replace($namefind,$namerepl,$filename);
+				$filestr1 = str_replace($namefind,$namerepl1,$filename);
 				$filestr = @$_SESSION['recordings_dir'].'/'.$pathstr.'/'.$filestr0;
+				$filestr2 = @$_SESSION['recordings_dir'].'/'.$pathstr.'/'.$filestr1;
 				$fileplay = '/files/'.$pathstr.'/'.$filestr0;
-				if (file_exists($filestr))
-					$filestr = "<button type='button' onclick='$(\"#win\").css(\"display\",\"block\");$(\"#title\").html(\" <b>主叫：</b>$row[caller_id_number] <b>被叫：</b>$row[destination_number] \");$(\"#player\").attr(\"src\",\"$fileplay\");'> 【播放语音】 </button>";
+				$fileplay1 = '/files/'.$pathstr.'/'.$filestr1;
+				if (file_exists($filestr) )
+					$filestr = "<button type='button' onclick='$(\"#win\").css(\"display\",\"block\");$(\"#title\").html(\" <b>主叫：</b>$row[caller_id_number] <b>被叫：</b>$row[destination_number] \");$(\"#player\").attr(\"src\",\"$fileplay\");'> 【WAV语音】 </button>";
+				elseif (file_exists($filestr2) )
+					$filestr = "<button type='button' onclick='$(\"#win\").css(\"display\",\"block\");$(\"#title\").html(\" <b>主叫：</b>$row[caller_id_number] <b>被叫：</b>$row[destination_number] \");$(\"#player\").attr(\"src\",\"$fileplay1\");'> 【WAV语音】 </button>";
+				elseif (file_exists($filestr.".mp3"))
+					$filestr = "<button type='button' onclick='$(\"#win\").css(\"display\",\"block\");$(\"#title\").html(\" <b>主叫：</b>$row[caller_id_number] <b>被叫：</b>$row[destination_number] \");$(\"#player\").attr(\"src\",\"".$fileplay.".mp3\");'> 【MP3语音】 </button>";
+				elseif (file_exists($filestr2.".mp3"))
+					$filestr = "<button type='button' onclick='$(\"#win\").css(\"display\",\"block\");$(\"#title\").html(\" <b>主叫：</b>$row[caller_id_number] <b>被叫：</b>$row[destination_number] \");$(\"#player\").attr(\"src\",\"".$fileplay1.".mp3\");'> 【MP3语音】 </button>";
 				else
-					$filestr = $fileplay = "";
+					$filestr = $filestr1 = $fileplay = $fileplay1 = "";
 			}else
 				$answertime = "";
 			$showtime = $row['start_stamp'].' 到 '.substr($row['end_stamp'],11)." <br/>$answertime 呼叫 $row[duration] 秒";
