@@ -528,11 +528,15 @@ class ESLevent {
 		$this->addHeader('priority', $priority);
 	}
 	/**
-	 * Gets the header with the key of $header_name from an event object.
+	 * 从 event object 获得头信息，按 $header_name 定义的头部标签；如果$header_name为false，返回所有头标签
 	 */
 	public function getHeader($header_name) {
 		if (isset($this->headers[$header_name])){
 			return $this->headers[$header_name];
+		}
+		if (!$header_name){
+			$keys = array_keys($this->headers);
+			return implode(",", $keys);
 		}
 		return NULL;
 	}
@@ -631,6 +635,7 @@ class event_socket
 {
 	private $esl = NULL;
 	private $extension = FALSE;
+	protected $UUID;
 	static private $instance;
 	/**
 	 * Initialize the ESL connection.  This must be called first
@@ -757,27 +762,72 @@ class event_socket
 		}
 	}
 	
-	/**
-	 * Make an outoging call by connecting a remote device to a local one
-	 */
-	public function originateLocal($external, $internal, $from = '')
-	{
-		//user->CallerID now
-		$this->sendBgAPI("originate",
-				sprintf("{origination_caller_id_number=1231231234,ignore_early_media=true,originate_timeout=30}sofia/external/%s@trunk1.bluebox.com %d", $external, $internal));
+	public function get_UUID($renew = 0,$byFS=0){
+		if (empty($this->UUID) || $renew)
+			if (!$byFS)
+				//uuid version 4
+				$this->UUID = sprintf( '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+						// 32 bits for "time_low"
+						mt_rand( 0, 0xffff ), mt_rand( 0, 0xffff ),
+						// 16 bits for "time_mid"
+						mt_rand( 0, 0xffff ),
+						// 16 bits for "time_hi_and_version", four most significant bits holds version number 4
+						mt_rand( 0, 0x0fff ) | 0x4000,
+						// 16 bits, 8 bits for "clk_seq_hi_res", 8 bits for "clk_seq_low",two most significant bits holds zero and one for variant DCE1.1
+						mt_rand( 0, 0x3fff ) | 0x8000,
+						// 48 bits for "node"
+						mt_rand( 0, 0xffff ), mt_rand( 0, 0xffff ), mt_rand( 0, 0xffff )
+						);
+			else
+				$this->UUID = $this->esl->api("create_uuid")->getBody();
+		if ($this->UUID)
+			return $this->UUID;
+		else
+			return false;
 	}
+	
 	/**
-	 * Make an outoging call by connecting a remote device to a remote one
+	 * originate {Avar}Auri &bridge({Bvar}Buri) 完全按自己设定参数进行拨号呼叫
+	 * 可以自由实现各种呼叫，主要针对特别情况，典型的如链接两个电话：
+	 * originate sofia/gateway/gatewayName/tel1 &bridge(sofia/gateway/gatewayName/tel2) 
+	 * $Avar A腿通道变量设置 
+	 * $Auri A腿链接 
+	 * $Bvar B腿通道变量设置 
+	 * $Buri B腿链接 
+	 * $bridge 是否使用bridge桥接应用来转接B腿，默认不使用
 	 */
-	public function originateRemote($external, $internal, $from = '')
+	public function originate($Avar='',$Auri='',$Bvar = '',$Buri='',$bridge = 0)
 	{
-		//user->CallerID now
-		$this->sendBgAPI("originate",
-				sprintf("{origination_caller_id_number=1231231234,ignore_early_media=true,originate_timeout=30}sofia/external/%s@trunk1.bluebox.com %d", $external, $internal));
+		if ($Avar)
+			$Avar ="{".$Avar."}";
+		if ($Bvar)
+			$Bvar ="{".$Bvar."}";
+		if (empty($Auri) && empty($Buri))
+			return false;
+		elseif($bridge)
+			return $this->esl->bgapi("originate",	" $Avar$Auri "." &bridge("." $Bvar$Buri )");
+		else
+			return $this->esl->bgapi("originate",	" $Avar$Auri "." $Bvar$Buri ");
 	}
+	
 	/**
-	 * This lets the eslManager wrap all the ESLconnection methods
+	 * originate {origination_caller_id_number=$from_caller_id,origination_uuid=$useUUID,ignore_early_media=true,originate_timeout=30,hangup_after_bridge=true,continue_on_fail=true,execute_on_answer='sched_hangup +1000 alloted_timeout'}sofia/gateway/$gateway_name/$to_callee_id  &endless_playback('$sound')
+	 * 通过指定路由呼叫指定的号码，接通后循环播放指定的声音（）
 	 */
+	public function originatePlay($gateway_name,$to_callee_id,$sound,$from_caller_id = '',$useUUID='')
+	{
+		if (empty($gateway_name) || empty($to_callee_id))
+			return false;
+		if (empty($sound))
+			$sound = __DIR__."/bell_ring2.wav";
+		$from = $uuid = "";
+		if ($from_caller_id)
+			$from ="origination_caller_id_number=$from_caller_id,";
+		if ($useUUID)
+			$uuid = "origination_uuid=$useUUID,";
+		return $this->esl->bgapi("originate",	"{".$from.$useUUID."ignore_early_media=true,originate_timeout=30,hangup_after_bridge=true,continue_on_fail=true,execute_on_answer='sched_hangup +1000 alloted_timeout'}sofia/gateway/$gateway_name/$to_callee_id  &endless_playback('$sound')");
+	}
+	
 	public function __call($name, $arguments) {
 		if (!$this->isConnected()) return FALSE;
 		
