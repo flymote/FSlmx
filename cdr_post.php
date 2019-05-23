@@ -2,7 +2,7 @@
 session_start();
 date_default_timezone_set('Asia/Shanghai');
 header("Content-type: text/html; charset=utf-8");
-
+define('BYPASS_LOGIN',1);
 require_once "Shoudian_db.php";
 include_once 'Logger.php';
 $Logger = new Logger( __DIR__.'/logs', LogLevel::DEBUG, array (
@@ -12,7 +12,7 @@ $Logger = new Logger( __DIR__.'/logs', LogLevel::DEBUG, array (
 ));
 
 //set debug
-$debug = false; //true //false
+$debug = true; //true //false
 $file =__DIR__.'/.Config';
 if (is_file($file))
 	$conf = @unserialize(file_get_contents($file));
@@ -23,10 +23,10 @@ $time5 = microtime(true);
 $insert_time=$insert_count=0;
 
 
-function xml_cdr_log($msg) {
+function xml_cdr_log($msg,$level="debug") {
 	global $debug,$Logger;
 	if (!$debug) 	return;
-	$Logger->debug($msg);
+	$Logger->$level($msg);
 }
 
 function check_str($string, $trim = true) {
@@ -59,12 +59,12 @@ function process_xml_cdr($db, $leg, $xml_string) {
 	);
 	//parse the xml to get the call detail record info
 	try {
-			xml_cdr_log($xml_string);
+// 			xml_cdr_log($xml_string);
 			$xml = simplexml_load_string($xml_string);
 			if ($xml)
 				xml_cdr_log("\n success load XML \n");
 			else{
-				xml_cdr_log("\n Error for load XML \n");
+				xml_cdr_log("\n Error for load XML \n","error");
 				return false;
 			}
 				
@@ -163,9 +163,10 @@ if ($x == 0) {
 }
 $fields['caller_id_name'] = check_str(urldecode($row->caller_profile->caller_id_name));
 $fields['caller_id_number'] = check_str(urldecode($row->caller_profile->caller_id_number));
-foreach ($row->extension->attributes() as $v){
-	$fields['extension_uuid'] .= "$v "; 
-}
+if ($row->extension)
+	foreach ($row->extension->attributes() as $v){
+		$fields['extension_uuid'] .= "$v "; 
+	}
 $x++;
 }
 
@@ -219,9 +220,9 @@ $result = false;
 }
 //get cdr details from the http post
 if (!empty($_POST["cdr"])) {
-	if ($debug){
-		print_r ($_POST["cdr"]);
-	}
+// 	if ($debug){
+// 		print_r ($_POST["cdr"]);
+// 	}
 
 //通过其他页面传递xmlcdr的验证信息过来，如果有信息就验证；没有信息则忽略
 if (!empty($_SESSION['xmlcdr_auth'] )) {
@@ -241,6 +242,7 @@ if (!empty($_SESSION['xmlcdr_auth'] )) {
 	}
 	//check for the correct username and password
 	if ($auth_array[0] != $_SESSION['xmlcdr_auth'][0] || $auth_array[1] != $_SESSION['xmlcdr_auth'][1]) {
+		$Logger->error("\nfail auth: failed ! \n");
 		die("验证失败！");
 		return;
 	}
@@ -256,8 +258,8 @@ if (substr($_REQUEST['uuid'], 0, 2) == "a_") {
 xml_cdr_log("process cdr via post\n");
 //parse the xml and insert the data into the db
 process_xml_cdr($mysqli, $leg, $xml_string);
-}
-
+}else 
+	xml_cdr_log("CDR info not postin !\n");
 if (!empty($_SESSION['log_dir'])){
 	$xml_cdr_dir = $_SESSION['log_dir'].'/xml_cdr';
 	xml_cdr_log("process cdr in local dir: $xml_cdr_dir \n");
@@ -291,8 +293,10 @@ if (!empty($_SESSION['log_dir'])){
 	closedir($dir_handle);
 }
 
-$time = "数据插入用时: ".number_format($insert_time,5). " 秒 \n";
-$time .= "其他处理时间: ".number_format((microtime(true)-$time5-$insert_time),5). " 秒\n";
-if (!empty($_SESSION['log_dir']))
+if (!empty($_SESSION['log_dir'])){
+	$time = "数据插入用时: ".number_format($insert_time,5). " 秒 \n";
+	$time .= "其他处理时间: ".number_format((microtime(true)-$time5-$insert_time),5). " 秒\n";
 	echo "<li>$time</li></ul>";
-xml_cdr_log($time);
+	xml_cdr_log($time);
+}
+
