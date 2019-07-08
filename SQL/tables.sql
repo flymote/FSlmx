@@ -1,8 +1,8 @@
 /*
-SQLyog Ultimate v12.09 (64 bit)
+SQLyog Ultimate v12.5.0 (64 bit)
 MySQL - 5.7.19 : Database - shoudian
 *********************************************************************
-*/
+*/
 
 /*!40101 SET NAMES utf8 */;
 
@@ -31,6 +31,20 @@ CREATE TABLE `e_mobilearea` (
   UNIQUE KEY `mobileprefix` (`mobileprefix`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
+/*Table structure for table `fs_calling` */
+
+DROP TABLE IF EXISTS `fs_calling`;
+
+CREATE TABLE `fs_calling` (
+  `Timestamp` bigint(20) unsigned NOT NULL,
+  `UUID` char(36) NOT NULL,
+  `Event-Name` varchar(25) NOT NULL,
+  `Channel-State` varchar(25) DEFAULT NULL,
+  `Answer-State` varchar(25) DEFAULT NULL,
+  `Hangup-Cause` varchar(25) DEFAULT NULL,
+  `other-UUID` char(36) DEFAULT NULL
+) ENGINE=MEMORY DEFAULT CHARSET=utf8;
+
 /*Table structure for table `fs_dialplans` */
 
 DROP TABLE IF EXISTS `fs_dialplans`;
@@ -50,7 +64,7 @@ CREATE TABLE `fs_dialplans` (
   PRIMARY KEY (`id`),
   KEY `ext-name` (`ext-id`,`level`),
   KEY `enabled` (`enabled`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 /*Table structure for table `fs_domains` */
 
@@ -64,14 +78,21 @@ CREATE TABLE `fs_domains` (
   `parent_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '上级域的ID，域数据的ID，进行域的分组',
   `create_date` datetime DEFAULT NULL COMMENT '创建时间',
   `last_date` datetime DEFAULT NULL COMMENT '最后修改时间',
-  `user_prefix` varchar(4) NOT NULL DEFAULT '88' COMMENT '用户ID前缀',
+  `user_prefix` varchar(4) NOT NULL DEFAULT '8' COMMENT '用户ID前缀',
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `group_prefix` varchar(4) NOT NULL DEFAULT '99' COMMENT '组的前缀数字',
+  `group_prefix` varchar(4) NOT NULL DEFAULT '9' COMMENT '组的前缀数字',
+  `DID` int(10) unsigned NOT NULL COMMENT '设置域的DID号码，也是callcenter调用号',
+  `agent_login` int(10) unsigned DEFAULT '70' COMMENT '坐席签入号码',
+  `agent_out` int(11) unsigned DEFAULT '71' COMMENT '坐席签出号码',
+  `agent_break` int(10) unsigned DEFAULT '72' COMMENT '坐席示忙号码',
+  `callcenter_config` varchar(2000) DEFAULT NULL COMMENT '呼叫中心的配置',
   PRIMARY KEY (`id`),
+  UNIQUE KEY `DID` (`DID`),
+  UNIQUE KEY `domain_id` (`domain_id`),
   KEY `level` (`level`),
   KEY `enabled` (`enabled`,`parent_id`,`id`,`level`),
   KEY `parent_id` (`parent_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 /*Table structure for table `fs_extensions` */
 
@@ -87,7 +108,7 @@ CREATE TABLE `fs_extensions` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `ext-name` (`ext-name`),
   KEY `enabled` (`context-name`,`enabled`,`ext-level`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 /*Table structure for table `fs_gateways` */
 
@@ -119,7 +140,7 @@ CREATE TABLE `fs_gateways` (
   `addon` varchar(500) DEFAULT NULL COMMENT '更多参数，输入格式如：<param name="extension-in-contact" value="true"/>',
   PRIMARY KEY (`id`),
   KEY `enabled` (`enabled`,`domain_id`,`domain_user`)
-) ENGINE=MyISAM AUTO_INCREMENT=8 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 /*Table structure for table `fs_groups` */
 
@@ -158,7 +179,7 @@ CREATE TABLE `fs_setting` (
   `recordings_dir` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `enabled` (`enabled`)
-) ENGINE=MyISAM AUTO_INCREMENT=25 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 /*Table structure for table `fs_users` */
 
@@ -193,7 +214,7 @@ DROP TABLE IF EXISTS `fs_xml_cdr`;
 CREATE TABLE `fs_xml_cdr` (
   `uuid` varchar(36) NOT NULL,
   `domain_uuid` varchar(50) DEFAULT NULL,
-  `extension_uuid` varchar(100) DEFAULT NULL,
+  `extension_uuid` varchar(200) DEFAULT NULL,
   `domain_name` varchar(50) DEFAULT NULL,
   `accountcode` varchar(50) DEFAULT NULL,
   `direction` varchar(50) DEFAULT NULL,
@@ -241,10 +262,11 @@ CREATE TABLE `fs_xml_cdr` (
   `hangup_cause` varchar(100) DEFAULT NULL,
   `hangup_cause_q850` decimal(10,0) DEFAULT NULL,
   `sip_hangup_disposition` varchar(100) DEFAULT NULL,
-  `xml` varbinary(5000) DEFAULT NULL,
+  `xml` varbinary(6000) DEFAULT NULL,
   `orig_caller_number` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`uuid`),
-  KEY `time` (`start_stamp`,`answer_stamp`)
+  KEY `time` (`start_stamp`,`answer_stamp`),
+  KEY `start_epoch` (`start_epoch`,`billsec`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
