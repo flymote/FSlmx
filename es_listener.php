@@ -75,7 +75,7 @@ class FreeSwitchEventListener
 		
 		if ($this->fp) {
 			while (!feof($this->fp)) {
-				$buffer = fgets($this->fp, 1024);
+				$buffer = fgets($this->fp,10240);
 				usleep(50); //allow time for reponse
 				if (trim($buffer) == "Content-Type: auth/request") {
 					echo "<li>【event_socket_create】$buffer >>> send auth >>></li>";
@@ -114,7 +114,7 @@ class FreeSwitchEventListener
 			{
 				$x++;
 				usleep(100);
-				$theNewData = stream_get_line($this->fp, 4096, "\n");
+				$theNewData = stream_get_line($this->fp, 10240, "\n");
 				if ($theNewData){
 					$response = urldecode(trim($theNewData));
 					echo "<li>【event_socket_request $x 】$response</li>";

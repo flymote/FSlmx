@@ -3,8 +3,10 @@ set_time_limit(600);
 session_start();
 date_default_timezone_set('Asia/Shanghai');
 header("Content-type: text/html; charset=utf-8");
-// if (empty($_SESSION['ESL_HOST']) || empty($_SESSION['conf_dir']))
-// 	die("请正常登录使用！不允许直接进行操作");
+if (empty($_SESSION['FSlmxusers'])){
+	header("Location:index.php");
+	die("login first!!");
+}
 
 define("ESL_HOST", @$_SESSION['ESL_HOST']);
 define("ESL_PORT", @$_SESSION['ESL_PORT']);
@@ -15,7 +17,7 @@ else
 	die("请正常登录使用！不允许直接进行操作");
 require_once "detect_switch.php";
 
-$files = array("dialplan_public"=>"$conf_dir/dialplan/public.xml","dialplan_default"=>"$conf_dir/dialplan/default.xml","sip_external"=>"$conf_dir/sip_profiles/external.xml","sip_internal"=>"$conf_dir/sip_profiles/internal.xml","autoload_sofia"=>"$conf_dir/autoload_configs/sofia.conf.xml","autoload_switch"=>"$conf_dir/autoload_configs/switch.conf.xml","autoload_modules"=>"$conf_dir/autoload_configs/modules.conf.xml","autoload_acl"=>"$conf_dir/autoload_configs/acl.conf.xml","autoload_ES"=>"$conf_dir/autoload_configs/event_socket.conf.xml","autoload_ivr"=>"$conf_dir/autoload_configs/ivr.conf.xml","autoload_callcenter"=>"$conf_dir/autoload_configs/callcenter.conf.xml","autoload_xmlcdr"=>"$conf_dir/autoload_configs/xml_cdr.conf.xml","vars"=>"$conf_dir/vars.xml");
+$files = array("dialplan_public"=>"$conf_dir/dialplan/public.xml","dialplan_default"=>"$conf_dir/dialplan/default.xml","sip_external"=>"$conf_dir/sip_profiles/external.xml","sip_internal"=>"$conf_dir/sip_profiles/internal.xml","autoload_sofia"=>"$conf_dir/autoload_configs/sofia.conf.xml","autoload_db"=>"$conf_dir/autoload_configs/db.conf.xml","autoload_switch"=>"$conf_dir/autoload_configs/switch.conf.xml","autoload_modules"=>"$conf_dir/autoload_configs/modules.conf.xml","autoload_acl"=>"$conf_dir/autoload_configs/acl.conf.xml","autoload_ES"=>"$conf_dir/autoload_configs/event_socket.conf.xml","autoload_ivr"=>"$conf_dir/autoload_configs/ivr.conf.xml","autoload_callcenter"=>"$conf_dir/autoload_configs/callcenter.conf.xml","autoload_xmlcdr"=>"$conf_dir/autoload_configs/xml_cdr.conf.xml","vars"=>"$conf_dir/vars.xml");
 $ids = array_keys($files);
 $writefile = 0;
 $goback = false;

@@ -23,7 +23,7 @@ if (isset($_GET['editUser'])){
 		$sql = "insert into fs_users (`user_id`,`user_name`,`password`,`domain_id`,`group_id`,`reverse_user`,`reverse_pwd`,`user_context`,`gateway`,`variables`) values(";
 		$sql_end = " )";
 		$showinfo .=" 添加 ";
-}
+	}
 
 $fail = 0;
 if ($result)
@@ -73,10 +73,7 @@ if (!empty($_POST)){
 		$domain_id0 = $group_id = "";
 		foreach ($_POST['group_id'] as $a){
 			$temp = explode(" ", $a);
-			if ($group_id=="")
-				$group_id = $temp[1];
-			else
-				$group_id .= ",$temp[1]";
+			$group_id .= ",$temp[1],";
 			if ($domain_id0=="")
 				$domain_id0 =  $temp[0];
 			elseif($domain_id0 != $temp[0]){
@@ -166,7 +163,7 @@ if (!empty($_POST)){
 }
 $html = <<<HTML
 <tr class='bg1'><td width=80><em>用户</em></td><td>名称：<input id="user_name" name="user_name" size="20"  maxlength="20" value="$user_name" onclick="this.select();" class="inputline1"/> 密码：<input id="password" name="password" size="20"  maxlength="20" value="$password" onclick="this.select();" class="inputline1"/> <span class="smallgray smallsize-font"> * 长度不得超过20</span></td></tr>
-<tr class='bg2'><td><em>用户标识：</em></td><td><input id="user_id" name="user_id" value="$user_id" size=20 class="inputline1" maxlength="20"/> <span class="smallgray smallsize-font"> * 用户标识，最长20位，仅限数字，也是坐席号</span></td></tr>
+<tr class='bg2'><td><em>用户标识：</em></td><td><input id="user_id" name="user_id" value="$user_id" size=20 class="inputline1" maxlength="20"/> <span class="smallgray smallsize-font"> * 用户标识，最长20位，仅限数字，也是坐席号（即登录账号）</span></td></tr>
 <tr class='bg1'><td><em>隶属</em></td><td>选择组：（可多个组，但不允许跨域）$glist  <br/>或 &nbsp;  域： $dmlist <span class="smallgray smallsize-font"> * 请选择其上级组 或 选择域，组优先</span></td></tr>
 <tr class='bg2'><td><em>信息项</em></td><td><input type="hidden" name="dmold" value="$dmold"><em>user_context:</em> <input id="user_context" name="user_context" value="$user_context" size=8 class="inputline1" /> &nbsp; <br/><em>反向认证用户:</em> <input id="reverse_user" name="reverse_user" value="$reverse_user" size=6 class="inputline1" /> &nbsp; <em>反向认证密码:</em> <input id="reverse_pwd" name="reverse_pwd" value="$reverse_pwd" size=6 class="inputline1" /><br/><em>登录IP: </em> <input id="cidr" name="cidr" value="$cidr" size=70 class="inputline1" /> <span class="smallgray smallsize-font">* 如12.34.56.78/32,10.11.12.0/24,20.0.0.0/8 注意掩码</span></td></tr>
 <tr class='bg1'><td><em>拨号设置</em></td><td><span class="smallgray smallsize-font">默认值：\${sofia_contact(\${dialed_user}@\${dialed_domain})}<br/>通道变量 {presence_id=\${dialed_user}@\${dialed_domain}}\${sofia_contact(\${dialed_user}@\${dialed_domain})}<br/>通道变量{transfer_fallback_extension=\${dialed_user}}\${sofia_contact(\${dialed_user}@\${dialed_domain})}<br/>动作\${sofia_contact(\${dialed_user}@\${dialed_domain})},pickup/\${dialed_user}@\${dialed_domain}<br/>变量及动作{sip_invite_domain=\${dialed_domain},presence_id=\${dialed_user}@\${dialed_domain}}\${sofia_contact(\${dialed_user}@\${dialed_domain})},pickup/\${dialed_user}@\${dialed_domain}<br/>{^^:sip_invite_domain=\${dialed_domain}:presence_id=\${dialed_user}@\${dialed_domain}}\${sofia_contact(*/\${dialed_user}@\${dialed_domain})},\${verto_contact(\${dialed_user}@\${dialed_domain})}</span><br/><input id="dial_str" name="dial_str" value="$dial_str" size=120 class="inputline1" maxlength="200"/></td></tr>
@@ -249,7 +246,7 @@ if (!empty($_GET['dmid'])){
 }
 if (!empty($_GET['gid'])){
 	$temp = $mysqli->real_escape_string($_GET['gid']);
-	$where .= " and `group_id` like '%$temp%' ";
+	$where .= " and `group_id` like '%,$temp,%' ";
 	$showget .=" 组标识含 '$temp' ";
 }
 $count = 20;
@@ -268,11 +265,11 @@ else{
 				$p = 0;
 }
 	$showget .= " （$totle 条，$pages 页）</span>";
-	echo '<p class="pcenter" style="font-size:18pt;">用户管理控制台 '.$showget.'  <a style="font-size:12pt;" href="?editUser=0">【新建用户】</a><a style="font-size:10pt;" href="index.php">返回主控</a></p><table class="tablegreen" width="90%" align="center"><th colspan=5><form method="get">域标识：<input id="dmid" name="dmid" value="" size=10> 组标识：<input id="gid" name="gid" value="" size=10> <input type="submit" value="确认"> <a href="?">【看全部】</a> <a href="FS_domains_cp.php">【看域】</a>	 <a href="FS_groups_cp.php">【看组】</a></form></th>';
+	echo '<p class="pcenter" style="font-size:18pt;">用户管理控制台 '.$showget.'  <a style="font-size:12pt;" href="?editUser=0">【新建用户】</a> &nbsp; <a style="font-size:10pt;" href="FS_callcenter_cp.php">【呼叫中心】</a> &nbsp;  &nbsp; <a style="font-size:10pt;" href="index.php">返回主控</a></p><table class="tablegreen" width="90%" align="center"><th colspan=5><form method="get">域标识：<input id="dmid" name="dmid" value="" size=10> 组标识：<input id="gid" name="gid" value="" size=10> <input type="submit" value="确认"> <a href="?">【看全部】</a> <a href="FS_domains_cp.php">【看域】</a>	 <a href="FS_groups_cp.php">【看组】</a></form></th>';
 	$result = $mysqli->query("select * from fs_users $where ORDER BY id DESC LIMIT ".($p*$count).",$count");
 	while (($row = $result->fetch_array())!==false) {
 		if (!$row)
-			die('<tr><td colspan=5 align=center><span class="smallred smallsize-font"> *用户新建后默认被禁用，需启用后方可应用！已应用的组可获取信息 或 停用；组设置后需启用，并需 用户管理中进行调用</span></td></tr></table><p class=\'red\'><a href="?list=1&p='.($p-1<0?0:$p-1).$getstr.'">前一页</a> '.($p==0?1:$p+1).'  <a href="?p='.($p+1>$pages?$pages:$p+1).$getstr.'">下一页</a> 
+			die('<tr><td colspan=5 align=center><span class="smallred smallsize-font"> *用户新建后默认被禁用，需启用后方可应用！已应用的组可获取信息 或 停用；组设置后需启用，并需 用户管理中进行调用<br/> *添加或修改用户，都需先启用组及用户，而后必须将域重新部署启用！！</span></td></tr></table><p class=\'red\'><a href="?list=1&p='.($p-1<0?0:$p-1).$getstr.'">前一页</a> '.($p==0?1:$p+1).'  <a href="?p='.($p+1>$pages?$pages:$p+1).$getstr.'">下一页</a> 
     跳转到：<input id="topage" name="togape" value="" size=4><input type="submit" value="确认" onclick="pa = document.getElementById(\'topage\').value-1;
     window.location.href=\'?p=\'+pa+\''.$getstr.'\';return false;"/></p></body></html>');
 		else{

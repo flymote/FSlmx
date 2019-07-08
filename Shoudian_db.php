@@ -1,5 +1,17 @@
 <?php
-$mysqli = new mysqli('localhost', 'root', 'root', 'FSlmx');
+if (!defined('BYPASS_LOGIN') && empty($_SESSION['FSlmxusers'])){
+	header("Location:./index.php");
+	die("login first!!");
+}
+
+define("SYSDB_HOST",  'localhost');
+define("SYSDB_USER", 'limx');
+define("SYSDB_PASSWORD",'limaoxiang');
+define("SYSDB_MAINDB",'shoudian');
+define("SYSDB_FSDB",'freeswitch');
+
+$mysqli = new mysqli(SYSDB_HOST, SYSDB_USER, SYSDB_PASSWORD, SYSDB_MAINDB);
+// $mysqli = new mysqli('localhost', 'root', 'root', 'shoudian');
 if ($mysqli->connect_error) {
     die('数据库 连接错误 (' . $mysqli->connect_errno . ') '. $mysqli->connect_error);
 }
@@ -17,4 +29,13 @@ function result_fetch_all($result,$tag=MYSQLI_BOTH){
 		if (!$row) return $results;
 		$results[] = $row;
 	}
+}
+
+//建立于freeswitch的连接
+function freeswitchDB(){
+	$mysqli = new mysqli(SYSDB_HOST, SYSDB_USER, SYSDB_PASSWORD, SYSDB_FSDB);
+	if ($mysqli->connect_error) {
+		die('数据库 连接错误 (' . $mysqli->connect_errno . ') '. $mysqli->connect_error);
+	}
+	return $mysqli;
 }

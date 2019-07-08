@@ -31,6 +31,13 @@ $xml_string = file_get_contents($conf);
 $xml = simplexml_load_string($xml_string);
 if (!$xml)
 	die("无法读取系统配置文件！");
+
+$file =__DIR__.'/.Config';
+if (is_file($file))
+	$ini_conf = @unserialize(file_get_contents($file));
+else
+	$ini_conf = false;
+		
 $settings = array();
 $name = "";
 foreach($xml as $key=>$one ){
@@ -99,13 +106,17 @@ foreach ($settings as $key=>$data){
 				foreach ($getone as $tmpk=>$tmpv){
 					if ($modi && ($tmpk =="value"||$tmpk =="ptime") )
 						$tmpv = $modvalue;
-					$str.="$tmpk=\"$tmpv\" ";
+						if (($one =='core-db-dsn' || $one =='odbc-dsn') && (!empty($ini_conf['odbcdsn']) && $tmpk =="value" && $tmpv != $ini_conf['odbcdsn'] )){
+						$str.="$tmpk=\"$tmpv\" <br/><span class=red>与设置 $ini_conf[odbcdsn] 冲突！请修正！</span>";
+					}else
+						$str.="$tmpk=\"$tmpv\" ";
 				}
 				if (fmod($i,2)==0)
 					$bg = "class='bg1'";
 				else 
 					$bg = "class='bg2'";
 				$i++;
+				
 				$html .="<tr $bg><td class='blod14'>$i.<em class='bgblue'>$k1 </em>&nbsp; $str </td><td>【改为<input type='text' name='{$k1}{$one}m' value='' size=8 class='inputline'/><label><input type='checkbox' name='mod[]' value='{$k1}-{$one}'/>选择修改</label>】 <label>【<input type='checkbox' name='del[]' value='{$k1}-{$one}'/>选择删除】</label> </td></tr>";
 				$content .= "<$k1 $str/>\n";
 			}

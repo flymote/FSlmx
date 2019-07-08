@@ -762,24 +762,17 @@ class event_socket
 		}
 	}
 	
-	public function get_UUID($renew = 0,$byFS=0){
+	public function get_UUID($renew = 0,$byFS=0){ 
 		if (empty($this->UUID) || $renew)
-			if (!$byFS)
-				//uuid version 4
-				$this->UUID = sprintf( '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-						// 32 bits for "time_low"
-						mt_rand( 0, 0xffff ), mt_rand( 0, 0xffff ),
-						// 16 bits for "time_mid"
-						mt_rand( 0, 0xffff ),
-						// 16 bits for "time_hi_and_version", four most significant bits holds version number 4
-						mt_rand( 0, 0x0fff ) | 0x4000,
-						// 16 bits, 8 bits for "clk_seq_hi_res", 8 bits for "clk_seq_low",two most significant bits holds zero and one for variant DCE1.1
-						mt_rand( 0, 0x3fff ) | 0x8000,
-						// 48 bits for "node"
-						mt_rand( 0, 0xffff ), mt_rand( 0, 0xffff ), mt_rand( 0, 0xffff )
-						);
-			else
-				$this->UUID = $this->esl->api("create_uuid")->getBody();
+			if (!$byFS){ //多线程环境uuid会重复！
+				 $char = md5(uniqid(mt_rand(), true));
+				 $this->UUID  = substr($chars,0,8) . '-';
+				 $this->UUID .= substr($chars,8,4) . '-';
+				 $this->UUID .= substr($chars,12,4) . '-';
+				 $this->UUID .= substr($chars,16,4) . '-';
+				 $this->UUID .= substr($chars,20,12);
+		}else
+			$this->UUID = $this->esl->bgapi("create_uuid")->getHeader("Job-UUID");
 		if ($this->UUID)
 			return $this->UUID;
 		else
@@ -811,7 +804,8 @@ class event_socket
 	}
 	
 	/**
-	 * originate {origination_caller_id_number=$from_caller_id,origination_uuid=$useUUID,ignore_early_media=true,originate_timeout=30,hangup_after_bridge=true,continue_on_fail=true,execute_on_answer='sched_hangup +1000 alloted_timeout'}sofia/gateway/$gateway_name/$to_callee_id  &endless_playback('$sound')
+	 * originate {origination_caller_id_number=$from_caller_id,origination_uuid=$useUUID,ignore_early_media=true,originate_timeout=30,hangup_after_bridge=false,continue_on_fail=true,execute_on_answer='sched_hangup +1000 alloted_timeout'}sofia/gateway/$gateway_name/$to_callee_id  &endless_playback('$sound')
+	 * execute_on_answer='sched_hangup +1000 alloted_timeout 是最长通话时间1000s
 	 * 通过指定路由呼叫指定的号码，接通后循环播放指定的声音（）
 	 */
 	public function originatePlay($gateway_name,$to_callee_id,$sound,$from_caller_id = '',$useUUID='')
@@ -825,7 +819,26 @@ class event_socket
 			$from ="origination_caller_id_number=$from_caller_id,";
 		if ($useUUID)
 			$uuid = "origination_uuid=$useUUID,";
-		return $this->esl->bgapi("originate",	"{".$from.$useUUID."ignore_early_media=true,originate_timeout=30,hangup_after_bridge=true,continue_on_fail=true,execute_on_answer='sched_hangup +1000 alloted_timeout'}sofia/gateway/$gateway_name/$to_callee_id  &endless_playback('$sound')");
+		return $this->esl->bgapi("originate",	"{".$from.$useUUID."ignore_early_media=true,originate_timeout=30,hangup_after_bridge=false,continue_on_fail=true,execute_on_answer='sched_hangup +1000 alloted_timeout'}sofia/gateway/$gateway_name/$to_callee_id  &endless_playback('$sound')");
+	}
+	
+	/**
+	 * uuid_transfer $uuid $both $dest
+	 * 通过uuid 转接通话，如果both ==dual ，就使用uuid_dual_transfer命令，默认是uuid_transfer
+	 * dest是目标地址
+	 * uuid_transfer <uuid> [-bleg|-both] <dest-exten> [<dialplan>] [<context>]
+	 * uuid_dual_transfer <uuid> <A-dest-exten>[/<A-dialplan>][/<A-context>] <B-dest-exten>[/<B-dialplan>][/<B-context>]
+	 */
+	public function uuid_transfer($uuid,$dest,$both=''){
+		if (empty($uuid) || empty($dest))
+			return false;
+		if($both =='dual')
+			return $this->esl->bgapi("uuid_dual_transfer","$uuid $dest");
+		elseif(!($both =="both" || $both == "bleg"))
+			$both = "";
+		else 
+			$both = "-$both";
+		return $this->esl->bgapi("uuid_transfer","$uuid $both $dest");
 	}
 	
 	public function __call($name, $arguments) {

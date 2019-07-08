@@ -54,6 +54,8 @@ if (!empty($_POST)){
 	}else {
 		$dmlist = " <span class=\"smallgray smallsize-font\"> *无隶属域* </span>";
 		$domain_id = "";
+		$showinfo .= "<span class='bgred'>必须选择隶属域！</span><br/>";
+		$fail = 1;
 	}
 	$calltimeout = intval($_POST['calltimeout']);
 	if ($calltimeout>255)
@@ -111,7 +113,7 @@ $html = <<<HTML
 <tr class='bg1'><td width=80><em>组名称：</em></td><td><input id="group_name" name="group_name" size="30"  maxlength="20" value="$group_name" onclick="this.select();" class="inputline1"/> <span class="smallgray smallsize-font"> * 长度不得超过20，请用中英文、数字及横线，不得重复</span></td></tr>
 <tr class='bg2'><td><em>组标识：</em></td><td><input id="group_id" name="group_id" value="$group_id" size=10 class="inputline1" maxlength="20"/> <span class="smallgray smallsize-font"> * 组标识必须全局唯一，最长20位，仅限数字</span></td></tr>
 <tr class='bg1'><td><em>上级域：</em></td><td>$dmlist <span class="smallgray smallsize-font"> * 请选择其上级的域</span></td></tr>
-<tr class='bg2'><td><em>信息项</em></td><td><input type="hidden" name="dmold" value="$dmold"><em>呼叫超时：</em> <input id="calltimeout" name="calltimeout" value="$calltimeout" size=2 class="inputline1" /> &nbsp; <em>呼叫方式：</em> <label><input id="calltypea" name="calltype" value="+A" type="radio" />同时振铃</label> &nbsp; <label><input id="calltypef" name="calltype" value="+F" type="radio" />依次振铃</label></td></tr>
+<tr class='bg2'><td><em>信息项</em></td><td><input type="hidden" name="dmold" value="$dmold"><em>呼叫超时：</em> <input id="calltimeout" name="calltimeout" value="$calltimeout" size=2 class="inputline1" /> &nbsp; <em>呼叫方式：</em> <label><input id="calltypea" name="calltype" value="+A" type="radio" />同时振铃 +A</label> &nbsp; <label><input id="calltypef" name="calltype" value="+F" type="radio" />依次振铃 +F</label> &nbsp; <label><input id="calltypee" name="calltype" value="+E" type="radio" />多线程振铃 +E</label></td></tr>
 HTML;
 $submitbutton = "<input type=\"submit\" value=\"确认提交\" />";
 if (!empty($_POST)){
@@ -131,7 +133,7 @@ if (!empty($_POST)){
 	}else
 		$showinfo .= "<span class='bgred'>操作失败！{$mysqli->error}</span>";
 }
-$ct = "<script>if ('$calltype'=='+F') $('#calltypef').prop('checked','checked'); else if ('$calltype'=='+A') $('#calltypea').prop('checked','checked'); </script>";
+$ct = "<script>if ('$calltype'=='+F') $('#calltypef').prop('checked','checked'); else if ('$calltype'=='+A') $('#calltypea').prop('checked','checked'); else if ('$calltype'=='+E') $('#calltypee').prop('checked','checked'); </script>";
 echo <<<HTML
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"><head>
@@ -216,11 +218,11 @@ else{
 				$p = 0;
 }
 	$showget .= " （$totle 条，$pages 页）</span>";
-	echo '<p class="pcenter" style="font-size:18pt;">组管理控制台 '.$showget.'  <a style="font-size:12pt;" href="?editGroup=0">【新建组】</a><a style="font-size:10pt;" href="index.php">返回主控</a></p><table class="tablegreen" width="90%" align="center"><th colspan=6><form method="get">组名称：<input id="gid" name="gid" value="" size=10> 上级域标识：<input id="dmid" name="dmid" value="" size=10> <input type="submit" value="确认"> <a href="?">【看全部】</a> <a href="FS_domains_cp.php">【看域】</a>	</form></th>';
+	echo '<p class="pcenter" style="font-size:18pt;">组管理控制台 '.$showget.'  <a style="font-size:12pt;" href="?editGroup=0">【新建组】</a> &nbsp; <a style="font-size:10pt;" href="FS_callcenter_cp.php">【呼叫中心】</a> &nbsp;  &nbsp; <a style="font-size:10pt;" href="index.php">返回主控</a></p><table class="tablegreen" width="90%" align="center"><th colspan=6><form method="get">组名称：<input id="gid" name="gid" value="" size=10> 上级域标识：<input id="dmid" name="dmid" value="" size=10> <input type="submit" value="确认"> <a href="?">【看全部】</a> <a href="FS_domains_cp.php">【看域】</a>	</form></th>';
 	$result = $mysqli->query("select * from fs_groups $where ORDER BY id DESC LIMIT ".($p*$count).",$count");
 	while (($row = $result->fetch_array())!==false) {
 		if (!$row)
-			die('<tr><td colspan=6 align=center><span class="smallred smallsize-font"> *组新建后默认被禁用，需启用后方可应用！已应用的组可获取信息 或 停用；组设置后需启用，并需 用户管理中进行调用</span></td></tr></table><p class=\'red\'><a href="?list=1&p='.($p-1<0?0:$p-1).$getstr.'">前一页</a> '.($p==0?1:$p+1).'  <a href="?p='.($p+1>$pages?$pages:$p+1).$getstr.'">下一页</a> 
+			die('<tr><td colspan=6 align=center><span class="smallred smallsize-font"> *组新建后默认被禁用，需启用后方可应用！已应用的组可获取信息 或 停用；组设置后需启用，并需 用户管理中进行调用<br/> *设置新组或新用户，都需先启用，而后必须将域重新部署启用！！</span></td></tr></table><p class=\'red\'><a href="?list=1&p='.($p-1<0?0:$p-1).$getstr.'">前一页</a> '.($p==0?1:$p+1).'  <a href="?p='.($p+1>$pages?$pages:$p+1).$getstr.'">下一页</a> 
     跳转到：<input id="topage" name="togape" value="" size=4><input type="submit" value="确认" onclick="pa = document.getElementById(\'topage\').value-1;
     window.location.href=\'?p=\'+pa+\''.$getstr.'\';return false;"/></p></body></html>');
 		else{
@@ -244,37 +246,20 @@ else{
 				$showu = "<span class=\"smallgray smallsize-font\">无上级域</span>";
 			
 			$totle = array('0'=>0,'1'=>0);
-			$totle0 = $mysqli->query("SELECT `enabled` ,COUNT(*)  FROM fs_users WHERE `group_id` = '$row[group_id]'  GROUP BY `enabled` order by `enabled` ");
-			while (($row_= $totle0->fetch_array(MYSQLI_NUM))!==false) {
-				if($row_){
-					if ($row_[0]=='1') $totle['1'] += $row_[1];
-					else $totle[$row_[0]] +=$row_[1];
-				}else break;
-			}
-			$totle0 = $mysqli->query("SELECT `enabled` ,COUNT(*)  FROM fs_users WHERE `group_id` like '$row[group_id],%'  GROUP BY `enabled` order by `enabled` ");
-			while (($row_ = $totle0->fetch_array(MYSQLI_NUM))!==false) {
-				if($row_){
-					if ($row_[0]=='1') $totle['1'] += $row_[1];
-					else $totle[$row_[0]] +=$row_[1];
-				}else break;
-			}
-			$totle0 = $mysqli->query("SELECT `enabled` ,COUNT(*)  FROM fs_users WHERE `group_id` like '%,$row[group_id]'  GROUP BY `enabled` order by `enabled` ");
-			while (($row_ = $totle0->fetch_array(MYSQLI_NUM))!==false) {
-				if($row_){
-					if ($row_[0]=='1') $totle['1'] += $row_[1];
-					else $totle[$row_[0]] +=$row_[1];
-				}else break;
-			}
 			$totle0 = $mysqli->query("SELECT `enabled` ,COUNT(*)  FROM fs_users WHERE `group_id` like '%,$row[group_id],%'  GROUP BY `enabled` order by `enabled` ");
-			while (($row_ = $totle0->fetch_array(MYSQLI_NUM))!==false) {
-				if($row_){
-					if ($row_[0]=='1') $totle['1'] += $row_[1];
-					else $totle[$row_[0]] +=$row_[1];
-				}else break;
+			while (($row_= $totle0->fetch_array(MYSQLI_NUM))!==false) {
+				if($row_)
+					$totle[$row_[0]] +=$row_[1];
+				else break;
 			}
 			$showuser = "含用户：可用<strong> $totle[1] </strong>  不可用<strong> $totle[0] </strong>  <a href='FS_users_cp.php?gid=$row[group_id]'>&raquo;&nbsp;管理用户</a>";
 			$options = "呼叫超时：<strong>".$row["calltimeout"]."</strong> &nbsp; ";
-			$options .= "呼叫方式： <strong>".$row['calltype']."</strong> &nbsp; ";
+			$options .= "呼叫方式： <strong>";
+			if ($row['calltype'])
+				$options .= $row['calltype'];
+			else
+				$options .= "默认";
+			$options .= "</strong> &nbsp; ";
 			$bgcolor = fmod($row['id'],2)>0?"class='bg1'":"class='bg2'";
 			echo "<tr $bgcolor><td>$showalert</td><td>组标识：<strong>$row[group_id]</strong></td><td> $showu</td><td> $showuser</td><td>$options</td><td><a href='?editGroup=$row[id]'>详情及修改...</a> <span id='info$row[id]' style='font-size:9pt;color:red;'>";
 			if ($row['enabled']){

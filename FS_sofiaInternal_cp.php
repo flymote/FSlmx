@@ -31,6 +31,13 @@ $xml_string = file_get_contents($conf);
 $xml = simplexml_load_string($xml_string);
 if (!$xml)
 	die("无法读取系统配置文件！");
+
+$file =__DIR__.'/.Config';
+if (is_file($file))
+	$ini_conf = @unserialize(file_get_contents($file));
+else
+	$ini_conf = false;
+
 $settings = array();
 $name = "";
 foreach($xml as $key=>$one ){
@@ -110,7 +117,9 @@ foreach ($settings as $key=>$data){
 				foreach ($getone as $tmpk=>$tmpv){
 					if ($modi && ($tmpk =="value" || $tmpk =="data" || ($k1=='alias' || $k1=='domain') && $tmpk =="name"))
 						$tmpv = $modvalue;
-					$str.="$tmpk=\"$tmpv\" ";
+					if ($one =='odbc-dsn' && (!empty($ini_conf['odbcdsn']) && $tmpk =="value" && $tmpv != $ini_conf['odbcdsn'] ))
+						$str.="$tmpk=\"$tmpv\" <br/><span class=red>与设置 $ini_conf[odbcdsn] 冲突！请修正！</span>";
+					else $str.="$tmpk=\"$tmpv\" ";
 				}
 				if (fmod($i,2)==0)
 					$bg = "class='bg1'";

@@ -1,9 +1,20 @@
 <?php
+define('APPID', 'FSlmx');
 set_time_limit(600);
 session_start();
 date_default_timezone_set('Asia/Shanghai');
 header("Content-type: text/html; charset=utf-8");
 define('IS_WIN',strstr(PHP_OS, 'WIN') ? 1 : 0 );
+
+require_once 'func.inc.php';
+if (isset($_POST['username']) && !empty($_POST['psd']) ) {
+	if (login()){
+		$_SESSION['FSlmxusers'] = $_POST['username'];
+	}else
+		showlogin("FSlmx 请输入身份信息，需要验证身份：");
+}elseif (!isset($_SESSION['FSlmxusers']))
+showlogin("FSlmx 请输入身份信息，需要验证身份：");
+
 require_once "Shoudian_db.php";
 $result = $mysqli->query("select * from fs_setting where `enabled` = 9 limit 1");
 $row = $result->fetch_array();
@@ -39,7 +50,7 @@ echo "<p class='pleft'><span style='font-size:14pt;color:gray'> ☏  </span> 查
 <br/><span style='font-size:14pt;color:#FF8C00'> ☎  </span> 系统管理：【<a href='FS_freeswitch_cp.php'>系统配置</a>】【<a href='FS_switch_cp.php'>系统参数配置</a>】【<a href='FS_vars_cp.php'>系统预处理参数配置</a>】【<a href='FS_modules_cp.php'>系统功能模块配置</a>】
 <br/><span style='font-size:14pt;color:#FF8C00'> ☎  </span> SIP管理：【<a href='FS_sofiaExternal_cp.php'>sofiaExternal管理</a>】【<a href='FS_sofiaInternal_cp.php'>sofiaInternal管理</a>】【<a href='FS_gateways_cp.php'>路由管理</a>】【<a href='FS_xmlcdr_cp.php'>呼叫详细记录xmlcdr配置</a>】【<a href='FS_acl_cp.php'>访问控制列表acl配置</a>】
 <br/><span style='font-size:14pt;color:#FF8C00'> ☎  </span> 拨号管理：【<a href='FS_files_edit.php'>配置文件管理</a>】【<a href='FS_extensions_cp.php'>extensions管理</a>】【<a href='FS_dialplans_cp.php'>dialplans管理</a>】
-<br/><span style='font-size:14pt;color:#FF8C00'> ☎  </span> 域及用户管理：【<a href='FS_domains_cp.php'>域管理控制台</a>】【<a href='FS_groups_cp.php'>用户组管理</a>】【<a href='FS_users_cp.php'>用户管理</a>】</p>";
+<br/><span style='font-size:14pt;color:#FF8C00'> ☎  </span> 域及用户管理：【<a href='FS_domains_cp.php'>域管理控制台</a>】【<a href='FS_groups_cp.php'>用户组管理</a>】【<a href='FS_users_cp.php'>用户管理</a>】【<a href='FS_callcenter_cp.php'>呼叫中心管理</a>】</p>";
 
 $info = new detect_switch();
 

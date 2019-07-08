@@ -136,12 +136,13 @@ class detect_switch {
 		 *调用ESL类的方法执行相关ESL指令并获取显示结果
 		 *$cmd 需要执行的指令，如 api bgapi 等
 		 *$args  相关参数，用空格分开
-		 *$returnhtml 返回显示结果的格式，0 为文本 1为html
+		 *$returnhtml 返回显示结果的格式，0 为显示文本 1为显示html 2为返回结果变量
 		 *$isxml 反馈信息是否为xml格式，默认0
 		 */
 		public function run($cmd,$args='',$returnhtml=1,$isxml = 0){
 			if (empty($cmd))
 				return false;
+			$this->_data = [];
 			$FS_Vars = $this->esl->getResponse($this->esl->$cmd($args));
 			if ($isxml){
 				$xml = simplexml_load_string($FS_Vars);
@@ -158,7 +159,7 @@ class detect_switch {
 				else
 					$this->_data[] = $FS_Var;
 			}
-			if ($returnhtml){
+			if ($returnhtml==1){
 				echo "<ul>$cmd $args 反馈信息：";
 				foreach ($this->_data as $k=>$v){
 					if (is_numeric($k))
@@ -167,6 +168,8 @@ class detect_switch {
 						echo "<li><b>$k :</b> $v</li>";
 				}
 				echo "</ul>";
+			}elseif ($returnhtml==2){
+				return $this->_data;
 			}else{
 				echo "$cmd $args 反馈信息：\n";
 				foreach ($this->_data as $k=>$v){

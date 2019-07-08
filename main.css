@@ -15,13 +15,15 @@ li{background:#f9f7f7;font-size:9pt;padding:3px;margin:2px;line-height: 180%}
 .smallsize-font {font-size:10.8px;}
 .smallblue{font-size:12px;-webkit-transform-origin-x: 0;-webkit-transform: scale(0.90);color:#3535ff;}
 .bgblue{background:#6068ff;font-size:10pt;color:#ffffff;text-align:center;}
+.bggray{background:gray;font-size:10pt;color:#ffffff;text-align:center;}
 .bggreen{font-weight:bold;font-size:10pt;background:#93ff93;color:#000000;text-align:center;}
 .bg1{background:#f2f2ff;}
 .bg2{background:#fdfffd;}
 .red{font-size:12pt;color:red;text-align:center;}
 .orange{font-size:12pt;color:orange;text-align:center;}
-.bold14{font-size:14pt;font-family:Arial, Tahoma, Verdana, Sans-Serif,幼圆,宋体;text-align:center;}
-.bold12{font-size:12pt;font-family:Verdana, Sans-Serif,幼圆,宋体;text-align:center;}
+.bold14{font-size:14pt;font-family:Arial, Tahoma, Verdana, Sans-Serif,幼圆,宋体;font-weight:bold;text-align:center;}
+.bold16{font-size:16pt;font-family:Arial, Tahoma, Verdana, Sans-Serif,幼圆,宋体;font-weight:bold;text-align:center;}
+.bold12{font-size:12pt;font-family:Verdana, Sans-Serif,幼圆,宋体;font-weight:bold;text-align:center;}
 .inputline{border-color: #878787;border-style: solid;border-top-width: 0px;border-right-width: 0px;border-bottom-width: 1px;border-left-width: 0px;margin-left:3px;}
 .inputline1{color:#ff6820;border-color: #e14502;border-style: solid;border-top-width: 0px;border-right-width: 0px;border-bottom-width: 1px;border-left-width: 0px;margin-left:3px;}
 body{ font-family:Arial, Tahoma, Verdana, Sans-Serif,幼圆,宋体;}
