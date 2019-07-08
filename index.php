@@ -6,15 +6,6 @@ date_default_timezone_set('Asia/Shanghai');
 header("Content-type: text/html; charset=utf-8");
 define('IS_WIN',strstr(PHP_OS, 'WIN') ? 1 : 0 );
 
-require_once 'func.inc.php';
-if (isset($_POST['username']) && !empty($_POST['psd']) ) {
-	if (login()){
-		$_SESSION['FSlmxusers'] = $_POST['username'];
-	}else
-		showlogin("FSlmx 请输入身份信息，需要验证身份：");
-}elseif (!isset($_SESSION['FSlmxusers']))
-showlogin("FSlmx 请输入身份信息，需要验证身份：");
-
 require_once "Shoudian_db.php";
 $result = $mysqli->query("select * from fs_setting where `enabled` = 9 limit 1");
 $row = $result->fetch_array();
