@@ -5,8 +5,8 @@ if (!defined('BYPASS_LOGIN') && empty($_SESSION['FSlmxusers'])){
 }
 
 define("SYSDB_HOST",  'localhost');
-define("SYSDB_USER", 'limx');
-define("SYSDB_PASSWORD",'limaoxiang');
+define("SYSDB_USER", 'root');
+define("SYSDB_PASSWORD",'root');
 define("SYSDB_MAINDB",'shoudian');
 define("SYSDB_FSDB",'freeswitch');
 
