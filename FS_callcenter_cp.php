@@ -65,7 +65,7 @@ if (!empty($_POST)){
 					}
 				}else{
 					$add++;
-					$r = $fsdb->query("insert into agents ( `name`,`system`,`type`,`contact`,`status`,`state`,`max_no_answer`,`wrap_up_time`,`reject_delay_time`,`busy_delay_time`,`no_answer_delay_time` )values('$one','FSLMX','callback','{$vars}user/$one','Logged Out','Waiting',$maxnoanswer,$wrapuptime,$rejectdelaytime,$busydelaytime,$noanswerdelaytime)");
+					$r = $fsdb->query("insert into agents ( `name`,`system`,`type`,`contact`,`status`,`state`,`max_no_answer`,`wrap_up_time`,`reject_delay_time`,`busy_delay_time`,`no_answer_delay_time` )values('$one','single_box','callback','{$vars}user/$one','Logged Out','Waiting',$maxnoanswer,$wrapuptime,$rejectdelaytime,$busydelaytime,$noanswerdelaytime)");
 					if ($r){
 						$info->run("api","callcenter_config agent reload $one ");
 						$r = $fsdb->query("insert into tiers ( `queue`,`agent`,`state`,`level`,`position` )values('agents@$domainid','$one','Ready',$level,1)");
