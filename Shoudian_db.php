@@ -1,9 +1,4 @@
 <?php
-if (!defined('BYPASS_LOGIN') && empty($_SESSION['FSlmxusers'])){
-	header("Location:./index.php");
-	die("login first!!");
-}
-
 define("SYSDB_HOST",  'localhost');
 define("SYSDB_USER", 'root');
 define("SYSDB_PASSWORD",'root');
