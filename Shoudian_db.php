@@ -1,17 +1,14 @@
 <?php
-define("SYSDB_HOST",  'localhost');
-define("SYSDB_USER", 'root');
-define("SYSDB_PASSWORD",'root');
-define("SYSDB_MAINDB",'shoudian');
-define("SYSDB_FSDB",'freeswitch');
+define("SYSDB_HOST",  'localhost'); //mysql数据库主机
+define("SYSDB_USER", 'root'); //mysql数据库用户名
+define("SYSDB_PASSWORD",'root'); //mysql数据库密码
+define("SYSDB_MAINDB",'shoudian'); //mysql数据库名，业务数据（本系统的数据库）
+define("SYSDB_FSDB",'freeswitch'); //mysql数据库名，freeswitch数据库（这是FS用ODBC访问的运行数据库，需修改FS使用mysql数据库，而后在这里被系统调用）
 
 $mysqli = new mysqli(SYSDB_HOST, SYSDB_USER, SYSDB_PASSWORD, SYSDB_MAINDB);
 // $mysqli = new mysqli('localhost', 'root', 'root', 'shoudian');
 if ($mysqli->connect_error) {
     die('数据库 连接错误 (' . $mysqli->connect_errno . ') '. $mysqli->connect_error);
-}
-if (mysqli_connect_error()) {
-    die('数据库 连接错误 (' . mysqli_connect_errno() . ') '. mysqli_connect_error());
 }
 $mysqli->query("set names UTF8");
 
