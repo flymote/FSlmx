@@ -86,6 +86,7 @@ CREATE TABLE `fs_domains` (
   `agent_out` int(11) unsigned DEFAULT '71' COMMENT '坐席签出号码',
   `agent_break` int(10) unsigned DEFAULT '72' COMMENT '坐席示忙号码',
   `callcenter_config` varchar(2000) DEFAULT NULL COMMENT '呼叫中心的配置',
+  `ivr_config` varchar(3000) DEFAULT NULL COMMENT 'ivr菜单定义',
   PRIMARY KEY (`id`),
   UNIQUE KEY `DID` (`DID`),
   UNIQUE KEY `domain_id` (`domain_id`),

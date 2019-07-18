@@ -9,8 +9,15 @@ define("ESL_PORT", @$_SESSION['ESL_PORT']);
 define("ESL_PASSWORD",@$_SESSION['ESL_PASSWORD']);
 
 include 'Shoudian_db.php';
-//-------------------修改或添加域信息-----------------------------------
+
+//-------------------修改或添加域信息-----当存在 $_GET['editDomain']------------------------------------------------------------------
 if (isset($_GET['editDomain'])){
+	
+	function xmlentities($string){ //不允许 < > " 三种符号
+		$value = str_replace(array("<",">",'"'),'_', $string);
+		return $value;
+	}
+	
 	$id = intval($_GET['editDomain']);
 	$showinfo = "";
 	if ($id){
@@ -20,7 +27,7 @@ if (isset($_GET['editDomain'])){
 		$showinfo .=" id $id 更新 ";
 	}else{
 		$result = false;
-		$sql = "insert into fs_domains (`domain_id`,`domain_name`,`level`,`parent_id`,`create_date`,`last_date`,`user_prefix`,`group_prefix`,`DID`,`agent_login`,`agent_out`,`agent_break`,`callcenter_config`) values(";
+		$sql = "insert into fs_domains (`domain_id`,`domain_name`,`level`,`parent_id`,`create_date`,`last_date`,`user_prefix`,`group_prefix`,`DID`,`agent_login`,`agent_out`,`agent_break`,`callcenter_config`,`ivr_config`) values(";
 		$sql_end = " )";
 		$showinfo .=" 添加 ";
 }
@@ -78,9 +85,26 @@ if (!empty($_POST)){
 		$showinfo .= "<span class='bgred'>坐席签入\签出\示忙的号码，用户前缀和组前缀，DID，存在重复设置！</span><br/>";
 		$fail = 1;
 	}
-	$callcenter= ['strategy'=> $_POST['strategy'],'moh-sound'=> $_POST['moh-sound'],'record-template'=>$_POST['record-template'],'time-base-score'=>$_POST['time-base-score'],'max-wait-time'=>intval($_POST['max-wait-time']),'max-wait-time-with-no-agent'=>intval($_POST['max-wait-time-with-no-agent']),'max-wait-time-with-no-agent-time-reached'=>intval($_POST['max-wait-time-with-no-agent-time-reached']),'tier-rules-apply'=>$_POST['tier-rules-apply'],'tier-rule-wait-second'=>intval($_POST['tier-rule-wait-second']),'tier-rule-wait-multiply-level'=>$_POST['tier-rule-wait-multiply-level'],'tier-rule-no-agent-no-wait'=>$_POST['tier-rule-no-agent-no-wait'],'abandoned-resume-allowed'=>$_POST['abandoned-resume-allowed'],'discard-abandoned-after'=>intval($_POST['discard-abandoned-after'])];
+	$callcenter= ['strategy'=> $_POST['strategy'],'moh-sound'=>xmlentities($_POST['moh-sound']),'record-template'=>xmlentities($_POST['record-template']),'time-base-score'=>$_POST['time-base-score'],'max-wait-time'=>intval($_POST['max-wait-time']),'max-wait-time-with-no-agent'=>intval($_POST['max-wait-time-with-no-agent']),'max-wait-time-with-no-agent-time-reached'=>intval($_POST['max-wait-time-with-no-agent-time-reached']),'tier-rules-apply'=>$_POST['tier-rules-apply'],'tier-rule-wait-second'=>intval($_POST['tier-rule-wait-second']),'tier-rule-wait-multiply-level'=>$_POST['tier-rule-wait-multiply-level'],'tier-rule-no-agent-no-wait'=>$_POST['tier-rule-no-agent-no-wait'],'abandoned-resume-allowed'=>$_POST['abandoned-resume-allowed'],'discard-abandoned-after'=>intval($_POST['discard-abandoned-after'])];
 	$cc = $callcenter;
-	$callcenter = serialize($callcenter);
+	$callcenter = $mysqli->real_escape_string(json_encode($callcenter));
+	$menu = [];
+	if (is_array(@$_POST['menu'])){
+		foreach ($_POST['menu'] as $one){
+			if ($one['d'] != ''){
+				$one['d'] = xmlentities($one['d']);
+				$one['p'] = xmlentities($one['p']);
+				$menu[] = $one;
+			}
+		}
+		if ($menu)
+			$_POST['menu'] = $menu;
+		unset($a);
+	}else $_POST['menu'] = [];
+	$ivr =['greet-long' =>xmlentities($_POST['greet-long']),'timeout' => intval($_POST['timeout']),'greet-short' => xmlentities($_POST['greet-short']),'max-timeouts' => intval($_POST['max-timeouts']),'invalid-sound' => xmlentities($_POST['invalid-sound']),'exit-sound' => xmlentities($_POST['exit-sound']),'digit-len' => intval($_POST['digit-len']),	'inter-digit-timeout' =>intval($_POST['inter-digit-timeout']),'confirm-key'=>xmlentities($_POST['confirm-key']),'max-failures'=>intval($_POST['max-failures']),'menu'=>$_POST['menu']];
+	$ivr1 = $ivr;
+	$ivr = $mysqli->real_escape_string(json_encode($ivr));
+	
 	$validRegExp =  '/^[a-z0-9\-\_\.]+$/';
 	$prefixlen = strlen($_POST['domain_id']);
 	if ($prefixlen && ($prefixlen>100 || !preg_match($validRegExp, $_POST['domain_id']))) {
@@ -121,9 +145,9 @@ if (!empty($_POST)){
 	}
 	
 	if ($id)
-		$sql .= "`domain_id`='$domain_id',`domain_name`='$domain_name',`level`=$level,`parent_id`=$parent_id,`last_date`=now(),`user_prefix`='$user_prefix',`group_prefix`='$group_prefix',`DID`='$did',`agent_out`='$agent_out',`agent_login`='$agent_login',`agent_break`='$agent_break',`callcenter_config`='$callcenter'";
+		$sql .= "`domain_id`='$domain_id',`domain_name`='$domain_name',`level`=$level,`parent_id`=$parent_id,`last_date`=now(),`user_prefix`='$user_prefix',`group_prefix`='$group_prefix',`DID`='$did',`agent_out`='$agent_out',`agent_login`='$agent_login',`agent_break`='$agent_break',`callcenter_config`='$callcenter',`ivr_config`='$ivr'";
 	else
-		$sql .= "'$domain_id','$domain_name',$level,'$parent_id',now(),now(),'$user_prefix','$group_prefix',$did,$agent_login,$agent_out,$agent_break,'$callcenter'";
+		$sql .= "'$domain_id','$domain_name',$level,'$parent_id',now(),now(),'$user_prefix','$group_prefix',$did,$agent_login,$agent_out,$agent_break,'$callcenter',$ivr";
 	$gwold= $dmold ="";
 	$didoldfile = "<input type=\"hidden\" name=\"didoldfile\" value=\"$_POST[didoldfile]\">";
 }else{
@@ -138,20 +162,35 @@ if (!empty($_POST)){
 	$agent_out = @$row['agent_out'];
 	$agent_break = @$row['agent_break'];
 	$callcenter = @$row['callcenter_config'];
+	$ivr = @$row['ivr_config'];
 	$gwname = $gwold = "";
-	$dmold = $domain_name.$domain_id.$level.$user_prefix.$parent_id.$group_prefix.$did.$agent_login.$agent_out.$agent_break.$callcenter;
+	$dmold = $domain_name.$domain_id.$level.$user_prefix.$parent_id.$group_prefix.$did.$agent_login.$agent_out.$agent_break.$callcenter.$ivr;
 	$domain_up = "<select name='parent_id' id='parent_id' class='inputline1'>$domain_up</select><script>";
-	$cc = false;
+	$cc = $ivr1= false;
 	if ($callcenter)
-		$cc = unserialize($callcenter);
+		$cc = json_decode($callcenter,true);
+	if ($ivr)
+		$ivr1 = json_decode($ivr,true);
 	if (!is_array($cc))
 		$cc = ['strategy'=>'longest-idle-agent','moh-sound'=>'$${hold_music}','record-template'=>'$${recordings_dir}/${strftime(%Y-%m-%d-%H-%M-%S)}.${destination_number}.${caller_id_number}.${uuid}.wav','time-base-score'=>'system','max-wait-time'=>0,'max-wait-time-with-no-agent'=>0,'max-wait-time-with-no-agent-time-reached'=>5,'tier-rules-apply'=>'false','tier-rule-wait-second'=>300,'tier-rule-wait-multiply-level'=>'false','tier-rule-no-agent-no-wait'=>'false','abandoned-resume-allowed'=>'false','discard-abandoned-after'=>60];
+	if (!is_array($ivr1))
+		$ivr1 =['greet-long' =>'','timeout' => '','greet-short' => '','max-timeouts' => '','invalid-sound' => '',	'exit-sound' => '','digit-len' => '',	'inter-digit-timeout' => '','confirm-key'=>'','max-failures'=>''];
+	$menu = isset($ivr1['menu'])?$ivr1['menu']:[];
 	if ($parent_id)
 		$domain_up .= "$('#parent_id').val('$parent_id $domain_lists[$parent_id]');</script>";
 	else 
 		$domain_up .="$('#parent_id').val('');</script>";
 	$gwold = "<input type=\"hidden\" name=\"dmold\" value=\"$dmold\">";
 	$didoldfile = "<input type=\"hidden\" name=\"didoldfile\" value=\"{$level}_{$did}\">";
+}	
+$menuHtml = $maDefault = "";
+$menucount = count($menu);
+if ($menu){
+foreach ($menu as $k =>$one){
+	$k++;
+	$menuHtml .="<p class='pcenter'><select name='menu[$k][a]'  id='ma$k'><option value='menu-exec-app'>执行app</option><option value='menu-exec-api'>执行api</option><option value='menu-play-sound'>播放声音</option><option value='menu-sub'>调子菜单</option><option value='menu-say-phrase'>播放宏</option><option value='menu-back'>返回上级</option><option value='menu-top'>回主菜单</option><option value='menu-exit'>退出菜单</option></select> 按键 <input name='menu[$k][d]' value='$one[d]'> 参数 <input name='menu[$k][p]' value='$one[p]' size=60> <span onclick='remove(this)' style='cursor:pointer;' title='删除'>&otimes;</span></p>";
+	$maDefault .= "\$(\"#ma$k option[value=$one[a]]\").attr(\"selected\", \"selected\");";
+}
 }
 $html = <<<HTML
 <tr class='bg1'><td width=80><em>域名称：</em></td><td><input id="domain_name" name="domain_name" size="30"  maxlength="20" value="$domain_name" onclick="this.select();" class="inputline1"/> <span class="smallgray smallsize-font"> * 长度不得超过20，可中英文，不得重复</span></td></tr>
@@ -170,7 +209,23 @@ $html = <<<HTML
 <em>跳过无座席tier-rule-no-agent-no-wait</em><select name='tier-rule-no-agent-no-wait' id='tier-rule-no-agent-no-wait' class='inputline1'><option value='false'>不启用</option><option value='true'>启用</option></select>
 <em>呼入丢弃恢复abandoned-resume-allowed</em><select name='abandoned-resume-allowed' id='abandoned-resume-allowed' class='inputline1'><option value='false'>不恢复</option><option value='true'>可恢复</option></select> 
 <em>呼入丢弃超时discard-abandoned-after</em> <input id="discard-abandoned-after" name="discard-abandoned-after" value="{$cc['discard-abandoned-after']}" class="inputline1" size=1 /> 
-</td></tr><script>$('#strategy').val('$cc[strategy]');$('#time-base-score').val('{$cc['time-base-score']}');$('#tier-rules-apply').val('{$cc['tier-rules-apply']}');$('#tier-rule-wait-multiply-level').val('{$cc['tier-rule-wait-multiply-level']}');$('#abandoned-resume-allowed').val('{$cc['abandoned-resume-allowed']}');$('#tier-rule-no-agent-no-wait').val('{$cc['tier-rule-no-agent-no-wait']}');</script>
+</td></tr><script>var num=$menucount;$('#strategy').val('$cc[strategy]');$('#time-base-score').val('{$cc['time-base-score']}');$('#tier-rules-apply').val('{$cc['tier-rules-apply']}');$('#tier-rule-wait-multiply-level').val('{$cc['tier-rule-wait-multiply-level']}');$('#abandoned-resume-allowed').val('{$cc['abandoned-resume-allowed']}');$('#tier-rule-no-agent-no-wait').val('{$cc['tier-rule-no-agent-no-wait']}');</script>
+<tr><td><em>IVR菜单：</em></td><td style='line-height:25pt;'><span class="smallred smallsize-font"> * 下面 欢迎及操作提示语音及菜单项 没有填时ivr无效！其他项不填或0则忽略，时间为毫秒；如果单纯设接入时重复播放语音，请设置上面 呼叫中心  等待音乐！</span><br/>欢迎及操作提示语音 <input id="greet-long" name="greet-long" value="{$ivr1['greet-long']}" class="inputline1" /> ，若在总超时时间 <input id="timeout" name="timeout" value="{$ivr1['timeout']}" class="inputline1" size=1 /> 内未输入，播放待输入提示语音 <input id="greet-short" name="greet-short" value="{$ivr1['greet-short']}" class="inputline1" /><br/>若用户一直未输入，系统在播放 <input id="max-timeouts" name="max-timeouts" value="{$ivr1['max-timeouts']}" class="inputline1" size=1 /> -1次待输入提示语音后关闭ivr<br/>如果用户在总超时时间内输入了错误信息，系统会播放输入错误语音 <input id="invalid-sound" name="invalid-sound" value="{$ivr1['invalid-sound']}" class="inputline1" />，最多允许输入错误 <input id="max-failures" name="max-failures" value="{$ivr1['max-failures']}" class="inputline1" size=1 /> 次<br/>退出时播放结束语音 <input id="exit-sound" name="exit-sound" value="{$ivr1['exit-sound']}" class="inputline1" /> ，菜单长度 <input id="digit-len" name="digit-len" value="{$ivr1['digit-len']}" class="inputline1" size=1 />  位数字，等待输入超时 <input id="inter-digit-timeout" name="inter-digit-timeout" value="{$ivr1['inter-digit-timeout']}" class="inputline1" size=1 /> ，输入按<input id="confirm-key" name="confirm-key" value="{$ivr1['confirm-key']}" class="inputline1" size=1 />键结束(默认#) <br/> --->>> <input type='button' value='添加菜单项' onclick='add(num)'> <span class="smallgray smallsize-font"> 按键是数值如 23 或 正则如 /^(10[01][0-9])$/ ，app参数如 transfer 9996 XML default 或 bridge sofia/gateway/xx/123456789 ，调菜单和宏用其名</span><span id='menu_area'>$menuHtml</span></td></tr>
+<script type="text/javascript">
+$maDefault
+//添加一行<tr>
+function add() {
+num++;
+var content = "<p class='pcenter'>";
+content += "<select name='menu["+num+"][a]'><option value='menu-exec-app'>执行app</option><option value='menu-exec-api'>执行api</option><option value='menu-play-sound'>播放声音</option><option value='menu-sub'>调子菜单</option><option value='menu-say-phrase'>播放宏</option><option value='menu-back'>返回上级</option><option value='menu-top'>回主菜单</option><option value='menu-exit'>退出菜单</option></select> 按键 <input name='menu["+num+"][d]'> 参数 <input name='menu["+num+"][p]' size=60> <span onclick='remove(this)' style='cursor:pointer;'  title='删除'>&otimes;</span>";
+content +="</p>"
+$("#menu_area").append(content);
+}
+//删除当前行
+function remove(obj) {
+$(obj).parent().remove();
+}
+</script>
 HTML;
 $submitbutton = "<input type=\"submit\" value=\"确认提交\" />";
 if (!empty($_POST)){
@@ -202,11 +257,12 @@ echo <<<HTML
 <meta http-equiv="Content-Type content=text/html;charset=utf-8"/>
  <link rel="stylesheet" type="text/css" href="main.css"/><script type="text/javascript" src="jquery.js"></script>
 <script>function getinfo(sid){if (sid=='') {alert ('没有填写域名称，请先填写域名称！');}else \$.post( "Yurun/get_py.php", {string: sid}).done(function( data ) { $('#domain_id').val(data);});}</script>
-</head><body><p class='pcenter' style='font-size:18pt;'>域详细信息设置 <a style='font-size:10pt;' href='?'>&raquo;&nbsp;返回域主控页</a></p><table class="tablegreen" width="1000" align="center"><form method="post"><th colspan=2>$showinfo</th>$html<tr class='bg1'><th></th><th>$submitbutton</th></tr></form></table></body></html>
+</head><body><p class='pcenter' style='font-size:18pt;'>域详细信息设置 <a style='font-size:10pt;' href='?'>&raquo;&nbsp;返回域主控页</a></p><form method="post" id="formarea"><table class="tablegreen" width="1000" align="center"><th colspan=2>$showinfo</th>$html<tr class='bg1'><th></th><th>$submitbutton</th></tr></table></form></body></html>
 HTML;
 	exit;
 }
-//-----------域管理-------域数据库 ---POST提交操作-----------------------------
+
+//-----------域管理---------ajax提交部署、停用、启用、禁用、删除等域的相关操作-------------------------------------------
 $ext_result = $mysqli->query("select `domain_name`,`id` from fs_domains");
 $exts = result_fetch_all($ext_result,MYSQLI_NUM);
 $dmlist = array();
@@ -224,6 +280,7 @@ if (empty($_SESSION['POST_submit_once']) && isset($_POST['yid'])){
 		$file_cc = @$_SESSION['conf_dir']."/autoload_configs/callcenter.conf.xml";
 		$file_did = @$_SESSION['conf_dir']."/dialplan/public/$row[level]_$row[DID].xml";
 		$file_diadir = @$_SESSION['conf_dir']."/dialplan/".$row['domain_id'];
+		$file_ivr = @$_SESSION['conf_dir']."/ivr_menus/$row[domain_id].xml";
 		if (empty($row['domain_id']))
 			die("操作域不可用！请先启用！");
 		$_SESSION['POST_submit_once']=1;
@@ -231,6 +288,8 @@ if (empty($_SESSION['POST_submit_once']) && isset($_POST['yid'])){
 			$result = @unlink($file_dir);
 			if ($result){
 				@unlink($file_dia);
+				@unlink($file_did);
+				@unlink($file_ivr);
 				$info = new detect_switch();
 				$info->run('reloadxml','',0);
 				$info->run("api","callcenter_config queue unload agents@$row[domain_id]",0);
@@ -244,15 +303,7 @@ if (empty($_SESSION['POST_submit_once']) && isset($_POST['yid'])){
 			$gwlist = array();
 			foreach ($exts as $one) 
 				$gwlist[$one['gatewayname']] = $one;
-			
-			//这里初始化一个callcenter的队列列表备用
-			$ext_result = $mysqli->query("select `domain_id`,`callcenter_config` from fs_domains where `enabled`=1"); //域中使用的路由必须是没有被平台使用的
-			$cc_conf = [];
-			while (($row0 = $ext_result->fetch_array(MYSQLI_NUM))!==false) {
-				if (!$row0) break;
-				$cc_conf[$row0[0]] = $row0[1];
-			}
-			
+				
 			$file =__DIR__.'/.Config';
 			if (is_file($file))
 				$ini_conf = @unserialize(file_get_contents($file));
@@ -261,30 +312,8 @@ if (empty($_SESSION['POST_submit_once']) && isset($_POST['yid'])){
 					
 			$context ="<include>\n<context name=\"$row[domain_id]\">\n<extension name=\"unloop\">\n<condition field=\"\${unroll_loops}\" expression=\"^true$\"/>\n<condition field=\"\${sip_looped_call}\" expression=\"^true$\">\n<action application=\"deflect\" data=\"\${destination_number}\"/>\n</condition>\n</extension>\n<extension name=\"group-intercept\">\n<condition field=\"destination_number\" expression=\"^\*8$\">\n<action application=\"answer\"/>\n<action application=\"intercept\" data=\"\${hash(select/\${domain_name}-last_dial_ext/\${callgroup})}\"/>\n<action application=\"sleep\" data=\"2000\"/>\n</condition>\n</extension>\n<extension name=\"global\" continue=\"true\">\n<condition field=\"\${call_debug}\" expression=\"^true$\" break=\"never\">\n<action application=\"info\"/>\n</condition>\n<condition field=\"\${rtp_has_crypto}\" expression=\"^(\$\${rtp_sdes_suites})$\" break=\"never\">\n<action application=\"set\" data=\"rtp_secure_media=true\"/>\n<!-- Offer SRTP on outbound legs if we have it on inbound. -->\n<!-- <action application=\"export\" data=\"rtp_secure_media=true\"/> -->\n</condition>\n<condition field=\"\${endpoint_disposition}\" expression=\"^(DELAYED NEGOTIATION)\"/>\n<condition field=\"\${switch_r_sdp}\" expression=\"(AES_CM_128_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_80)\" break=\"never\">\n<action application=\"set\" data=\"rtp_secure_media=true\"/>\n<!-- Offer SRTP on outbound legs if we have it on inbound. -->\n<!-- <action application=\"export\" data=\"rtp_secure_media=true\"/> -->\n</condition>\n<condition>\n<action application=\"hash\" data=\"insert/\${domain_name}-spymap/\${caller_id_number}/\${uuid}\"/>\n<action application=\"hash\" data=\"insert/\${domain_name}-last_dial/\${caller_id_number}/\${destination_number}\"/>\n<action application=\"hash\" data=\"insert/\${domain_name}-last_dial/global/\${uuid}\"/>\n<action application=\"export\" data=\"RFC2822_DATE=\${strftime(%a, %d %b %Y %T %z)}\"/>\n</condition>\n</extension>\n<extension name=\"Local_Extension\">\n<condition field=\"destination_number\" expression=\"^$row[user_prefix](\d{1,20})$\">\n<action application=\"export\" data=\"dialed_extension=$1\"/>\n<!-- bind_meta_app can have these args <key> [a|b|ab] [a|b|o|s] <app> -->\n<action application=\"bind_meta_app\" data=\"1 b s execute_extension::dx XML features\"/>\n<action application=\"bind_meta_app\" data=\"2 b s record_session::\$\${recordings_dir}/\${caller_id_number}.\${strftime(%Y-%m-%d-%H-%M-%S)}.wav\"/>\n<action application=\"bind_meta_app\" data=\"3 b s execute_extension::cf XML features\"/>\n<action application=\"bind_meta_app\" data=\"4 b s execute_extension::att_xfer XML features\"/>\n<action application=\"set\" data=\"ringback=\${us-ring}\"/>\n<action application=\"set\" data=\"transfer_ringback=\$\${hold_music}\"/>\n<action application=\"set\" data=\"call_timeout=30\"/>\n<!-- <action application=\"set\" data=\"sip_exclude_contact=\${network_addr}\"/> -->\n<action application=\"set\" data=\"hangup_after_bridge=true\"/>\n<!--<action application=\"set\" data=\"continue_on_fail=NORMAL_TEMPORARY_FAILURE,USER_BUSY,NO_ANSWER,TIMEOUT,NO_ROUTE_DESTINATION\"/> -->\n<action application=\"set\" data=\"continue_on_fail=true\"/>\n<action application=\"hash\" data=\"insert/\${domain_name}-call_return/\${dialed_extension}/\${caller_id_number}\"/>\n<action application=\"hash\" data=\"insert/\${domain_name}-last_dial_ext/\${dialed_extension}/\${uuid}\"/>\n<action application=\"set\" data=\"called_party_callgroup=\${user_data(\${dialed_extension}@\${domain_name} var callgroup)}\"/>\n<action application=\"hash\" data=\"insert/\${domain_name}-last_dial_ext/\${called_party_callgroup}/\${uuid}\"/>\n<action application=\"hash\" data=\"insert/\${domain_name}-last_dial_ext/global/\${uuid}\"/>\n<!--<action application=\"export\" data=\"nolocal:rtp_secure_media=\${user_data(\${dialed_extension}@\${domain_name} var rtp_secure_media)}\"/>-->\n<action application=\"hash\" data=\"insert/\${domain_name}-last_dial/\${called_party_callgroup}/\${uuid}\"/>\n<action application=\"bridge\" data=\"user/\${dialed_extension}@\${domain_name}\"/>\n<action application=\"answer\"/>\n<action application=\"sleep\" data=\"1000\"/>\n<action application=\"bridge\" data=\"loopback/app=voicemail:default \${domain_name} \${dialed_extension}\"/>\n</condition>\n</extension>\n <X-PRE-PROCESS cmd=\"include\" data=\"$row[domain_id]/*.xml\"/>";
 			$xml = "<include>\n<domain name=\"$row[domain_id]\">\n<params>\n<param name=\"dial-string\" value=\"{^^:sip_invite_domain=\${dialed_domain}:presence_id=\${dialed_user}@\${dialed_domain}}\${sofia_contact(*/\${dialed_user}@\${dialed_domain})},\${verto_contact(\${dialed_user}@\${dialed_domain})}\"/>\n<!-- These are required for Verto to function properly -->\n<param name=\"jsonrpc-allowed-methods\" value=\"verto\"/>\n<!-- <param name=\"jsonrpc-allowed-event-channels\" value=\"demo,conference,presence\"/> -->\n<param name=\"allow-empty-password\" value=\"false\"/>\n</params>\n<variables>\n<variable name=\"record_stereo\" value=\"true\"/>\n<variable name=\"default_areacode\" value=\"\$\${default_areacode}\"/>\n<variable name=\"language\" value=\"zh\"/>\n<variable name=\"default_language\" value=\"zh\"/>\n<variable name=\"transfer_fallback_extension\" value=\"operator\"/>\n</variables>\n<groups>\n<group name=\"default\">\n<users>";
-			$callcenter_str_fail = "";  //呼叫失败后全部坐席都拨打一下？  <action application="bridge" data="{leg_timeout=15,ignore_early_media=true}${group_call(default@${domain_name})}"/>
-			$did = '<include>
-  <extension name="public_did_'.$row['domain_id'].'">
-    <condition field="destination_number" expression="^('.$row['DID'].')$">
-    <action application="set" data="domain_name='.$row['domain_id'].'"/>
-    <action application="callcenter" data="agents@${domain_name}"/> '. 
-    $callcenter_str_fail
-    .'</condition>
-  </extension>
-</include>';
-			$cc = '<configuration name="callcenter.conf" description="CallCenter">
-<settings>';
-			if  (!empty($ini_conf['odbcdsn']))
-				$cc .="\n<param name=\"odbc-dsn\" value=\"$ini_conf[odbcdsn]\"/>";
-			$cc .="\n</settings>\n\n<queues>\n";  
-			foreach ($cc_conf as $k=>$v){
-				$cc .="\n<queue name=\"agents@$k\">\n";
-				$temp = unserialize($v);
-				if (is_array($temp))
-					foreach ($temp as $k1=>$v1)
-						$cc .="<param name=\"$k1\" value=\"$v1\"/>\n";
-				$cc .="</queue>\n";
-			}
-			$cc .="\n</queues>\n\n<agents>\n</agents>\n\n<tiers>\n</tiers>\n\n</configuration>";
+			
+// 			处理用户账号-------------------------
 			$result = $mysqli->query("select `user_name`,`user_id`,`password`,`group_id`,`reverse_user`, `reverse_pwd`,`dial_str`,`user_context`,`gateway`,`variables`,`cidr` from fs_users where `domain_id` = '$row[domain_id]' and `enabled`=1 order by group_id");
 			$groups = array();
 			$usrstr = "\n"; 
@@ -368,6 +397,8 @@ if (empty($_SESSION['POST_submit_once']) && isset($_POST['yid'])){
 				}
 			}
 			$xml .= "$usrstr</users>\n</group>\n";
+			
+// 			处理组--------------------------------------
 			$result = $mysqli->query("select `group_id`,`calltype`,`calltimeout` from fs_groups where `domain_id` = '$row[domain_id]' and `enabled`=1");
 			while (($row1 = $result->fetch_array())!==false) {
 				if (!$row1) break;
@@ -378,7 +409,87 @@ if (empty($_SESSION['POST_submit_once']) && isset($_POST['yid'])){
 				$xml .= "      </group>\n";
 			}
 			$xml .=	"</groups>\n</domain>\n</include>";
-			$context .='
+			
+// 			处理IVR-------------------------------------------------
+$ivr = $row['ivr_config'];
+if ($ivr)
+	$ivr = json_decode($ivr,true);
+if (is_array($ivr)){
+	$menuContent = "";
+	$ivr_xml ="<include>\n  <menu name=\"ivr_$row[domain_id]\"";
+	foreach ($ivr as $k=>$one)
+		if (!is_array($one)){
+			if ($k=='greet-long' && empty($one)){ //说明语音没有就忽略ivr
+				$ivr = false;
+				break;
+			}elseif (empty($one)) //设置值为0或空的 忽略这个设置，注意，也不允许为0
+				continue;
+			$ivr_xml .= "\n      $k=\"$one\"";
+		}else
+			foreach ($one as $menu){
+				$mp = "";
+				if ($menu['p'])
+					$mp = "param=\"$menu[p]\"";
+				$menuContent .="\n    <entry action=\"$menu[a]\"  digits=\"$menu[d]\" $mp/>";
+			}
+	if ($menuContent)
+		$ivr_xml .= ">$menuContent \n  </menu>\n</include>";
+	else $ivr = false;
+}else
+	$ivr = false;
+					
+// 			处理呼叫中心-------------------------------------
+//这里初始化一个callcenter的队列列表备用
+$ext_result = $mysqli->query("select `domain_id`,`callcenter_config` from fs_domains where `enabled`=1"); //域中使用的路由必须是没有被平台使用的
+$cc_conf = [];
+while (($row0 = $ext_result->fetch_array(MYSQLI_NUM))!==false) {
+	if (!$row0) break;
+	$cc_conf[$row0[0]] = $row0[1];
+}
+$callcenter_str_fail = "";  //呼叫失败后全部坐席都拨打一下？  <action application="bridge" data="{leg_timeout=15,ignore_early_media=true}${group_call(default@${domain_name})}"/>
+if ($ivr)
+	$ivr_dia = "    <action application=\"answer\"/>\n    <action application=\"sleep\" data=\"500\"/>\n    <action application=\"ivr\" data=\"ivr_$row[domain_id]\"/>\n";
+else 
+	$ivr_dia = "    <action application=\"set\" data=\"cc_export_vars=domain_name,call_timeout,rid,origination_caller_id_number,origination_caller_id_name\"/>\n    <action application=\"callcenter\" data=\"agents@$row[domain_id]\"/>\n";
+$did = '<include>
+  <extension name="public_did_'.$row['domain_id'].'">
+    <condition field="destination_number" expression="^('.$row['DID'].')$">
+    <action application="set" data="domain_name='.$row['domain_id'].'"/>
+    <action application="set" data="call_timeout=10"/>
+    <action application="set" data="rid=${uuid}"/>
+    <action application="set" data="origination_caller_id_name=${caller_id_name}"/>
+    <action application="set" data="origination_caller_id_number=${caller_id_number}"/>
+'.$ivr_dia.$callcenter_str_fail.'
+    </condition>
+  </extension>
+</include>';
+$cc = '<configuration name="callcenter.conf" description="CallCenter">
+<settings>';
+if  (!empty($ini_conf['odbcdsn']))
+   $cc .="\n<param name=\"odbc-dsn\" value=\"$ini_conf[odbcdsn]\"/>";
+$cc .="\n</settings>\n\n<queues>\n";
+foreach ($cc_conf as $k=>$v){
+   $cc .="\n<queue name=\"agents@$k\">\n";
+   $temp = json_decode($v,true);
+   if (is_array($temp))
+    foreach ($temp as $k1=>$v1)
+    	$cc .="<param name=\"$k1\" value=\"$v1\"/>\n";
+    $cc .="</queue>\n";
+ }
+$cc .="\n</queues>\n\n<agents>\n</agents>\n\n<tiers>\n</tiers>\n\n</configuration>";
+    	
+$context .='
+  <extension name="callcenter_'.$row['domain_id'].'">
+    <condition field="destination_number" expression="^(callcenter)$">
+    <action application="set" data="domain_name='.$row['domain_id'].'"/>
+	<action application="set" data="call_timeout=10"/>
+	<action application="set" data="rid=${uuid}"/>
+	<action application="set" data="origination_caller_id_name=${caller_id_name}"/>
+	<action application="set" data="origination_caller_id_number=${caller_id_number}"/>
+    <action application="set" data="cc_export_vars=domain_name,call_timeout,rid,origination_caller_id_number,origination_caller_id_name"/>
+    <action application="callcenter" data="agents@'.$row['domain_id'].'"/>
+    </condition>
+  </extension>
 <extension name="agent_login">
   <condition field="destination_number" expression="^'.$row['agent_login'].'$">
     <action application="set" data="res=${callcenter_config(agent set status ${caller_id_number}@${domain_name} \'Available\')}" />
@@ -414,6 +525,8 @@ if (empty($_SESSION['POST_submit_once']) && isset($_POST['yid'])){
 				@file_put_contents($file_dia, $context);
 				@file_put_contents($file_did, $did);
 				@file_put_contents($file_cc, $cc);
+				if ($ivr)
+					@file_put_contents($file_ivr, $ivr_xml);
 				if (!is_dir($file_diadir))
 					mkdir($file_diadir);	
 				$info = new detect_switch();
@@ -454,7 +567,8 @@ if (empty($_SESSION['POST_submit_once']) && !empty($_POST['sid'])){
 		die("id $id 设置为禁用完毕");
 	}
 }
-//----------------------显示----------域数据库 列表及信息管理----------------------
+
+//----------------------显示----------域列表--------------------------------------------------------------------------------------
 $_SESSION['POST_submit_once']=0;
 echo "<html xmlns=http://www.w3.org/1999/xhtml><head><meta http-equiv=Content-Type content=\"text/html;charset=utf-8\">
 <link rel=\"stylesheet\" type=\"text/css\" href=\"main.css\"/><script src=\"jquery.js\"></script><script>
@@ -505,10 +619,10 @@ else{
 				$file_ = @$_SESSION['conf_dir']."/directory/".$row['domain_id'].".xml";
 				if (is_file($file_)){
 					$showalert= ' <span class="bggreen">已应用 </span>&nbsp; '.$row['id'].' &nbsp; <em class=\'red\'>'.$row['domain_name'].'</em>';
-					$showtools=" <input type='button' onclick=\"this.value='连接中，请等待反馈...';en99($row[id],'$row[domain_id]')\" value='停用'/>";
+					$showtools=" <input type='button' onclick=\"this.value='连接中，请等待反馈...';$(this).attr('disabled','true');en99($row[id],'$row[domain_id]')\" value='停用'/>";
 				}else{
 					$showalert= ' <span class="bgblue">已停用 </span>&nbsp; '.$row['id'].' &nbsp; <em class=\'red\'>'.$row['domain_name'].'</em>';
-					$showtools="<input type='button' onclick=\"this.value='连接中，请等待反馈...';en88($row[id],'$row[domain_id]')\" value='部署应用'/> &nbsp;  <input type='button' onclick=\"en0($row[id])\" value='禁止'/>";
+					$showtools="<input type='button' onclick=\"this.value='连接中，请等待反馈...';$(this).attr('disabled','true');en88($row[id],'$row[domain_id]')\" value='部署应用'/> &nbsp;  <input type='button' onclick=\"en0($row[id])\" value='禁止'/>";
 				}
 			}else 
 				$showalert= ' <span class="bgred">已禁止 </span>&nbsp; '.$row['id'].'  &nbsp; <em class=\'red\'>'.$row['domain_name'].'</em>';
