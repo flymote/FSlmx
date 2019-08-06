@@ -93,11 +93,13 @@ if (!empty($_POST)){
 // 	if (empty($variables)){
 // 		$variables = "toll_allow===domestic,international,local\naccountcode===$user_id\neffective_caller_id_name===$user_name\neffective_caller_id_number===$user_id\noutbound_caller_id_name===\$\${outbound_caller_name}\noutbound_caller_id_number===\$\${outbound_caller_id}";
 // 	}
-	
+	$gw_sql = [];
 	if ($id){
 		$sql .= "`user_id`='$user_id',`user_name`='$user_name',`password`='$password',`domain_id`='$domain_id',`group_id`='$group_id',`reverse_user`='$reverse_user',`reverse_pwd`='$reverse_pwd',`user_context`='$user_context',`gateway`='$gateway',`variables`='$variables'";
 	}else
 		$sql .= "'$user_id','$user_name','$password','$domain_id','$group_id','$reverse_user','$reverse_pwd','$user_context','$gateway','$variables'";
+	foreach ($_POST['gateway'] as $gw1)
+		$gw_sql[] = "update fs_gateways set `domain_id`='$domain_id',`domain_user`='$user_id' where `gatewayname` = '$gw1'";
 	$glist = $group_id;
 	$dmlist = $domain_id;
 	$dmold ="";
@@ -188,6 +190,8 @@ if (!empty($_POST)){
 		$result = $mysqli->query($sql);
 	if ($result){
 		$showinfo .= "<span class='bggreen'>操作成功！</span>";
+		foreach ($gw_sql as $sql)
+			$mysqli->query($sql);
 	}else
 		$showinfo .= "<span class='bgred'>操作失败！{$mysqli->error}</span>";
 }
