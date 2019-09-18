@@ -28,6 +28,10 @@ class detect_switch {
 				return false;
 		}
 		
+		public function get_api_reply($cmd){
+			return $this->esl->getResponse($this->esl->api($cmd));
+		}
+		
 		//根据提供的服务器id（fs_setting表）获取相关信息并保存入库
 		public function get_switch_info($sid){
 			if(!$this->esl->isConnected()){
@@ -46,8 +50,10 @@ class detect_switch {
 				if (isset($var[1])){
 					if ($var[0]=='core_uuid')
 						$core_uuid = $var[1];
-					elseif($var[0]=='recordings_dir') 
-					$recordings_dir = $var[1];
+					elseif($var[0]=='sounds_dir')
+						$sounds_dir = $var[1];
+					elseif($var[0]=='recordings_dir')
+						$recordings_dir = $var[1];
 					elseif($var[0]=='conf_dir')
 					$conf_dir = $var[1];
 					elseif($var[0]=='log_dir')
@@ -59,7 +65,7 @@ class detect_switch {
 				}
 			}
 			if ($conf_dir){
-				$sql ="update fs_setting set `version` ='$FS_Version',`core_uuid`='$core_uuid', `recordings_dir`='$recordings_dir', `conf_dir`='$conf_dir',`log_dir`='$log_dir',`external_sip_port`='$external_sip_port',`internal_sip_port`='$internal_sip_port' where id = $sid limit 1";
+				$sql ="update fs_setting set `version` ='$FS_Version',`core_uuid`='$core_uuid', `recordings_dir`='$recordings_dir',  `sounds_dir`='$sounds_dir', `conf_dir`='$conf_dir',`log_dir`='$log_dir',`external_sip_port`='$external_sip_port',`internal_sip_port`='$internal_sip_port' where id = $sid limit 1";
 				$return = $mysqli->query($sql);
 				if ($return)
 					return true;
@@ -76,41 +82,50 @@ class detect_switch {
 			
 			$FS_Vars = $this->esl->getResponse($this->esl->status());
 			foreach (explode("\n",$FS_Vars) as $FS_Var){
-				$var = explode("=", $FS_Var);
-				if (isset($var[1]))
-					$this->_data[$var[0]] = $var[1];
+				if ($FS_Var){
+					$var = explode("=", $FS_Var);
+					if (isset($var[1]))
+						$this->_data[$var[0]] = $var[1];
 					else
 						$this->_data[] = $FS_Var;
+				}
 			}
-			echo "<h2>== 状态信息  status ==</h2>";
+			echo "<p class='pleft'> == 状态信息  status ==</p>";
 			foreach ($this->_data as $k=>$v){
 				echo "<li>&nbsp; &nbsp; $v</li>";
 			}
 			$this->_data = array();
 			
-			$FS_Vars = $this->esl->getResponse($this->esl->global_getvar());
-			foreach (explode("\n",$FS_Vars) as $FS_Var){
-				$var = explode("=", $FS_Var);
-				if (isset($var[1]))
-					$this->_data[$var[0]] = $var[1];
-					else
-						$this->_data[] = $FS_Var;
+			$FS_Vars = $this->get_api_reply("show modules");
+			foreach (explode("\n",$FS_Vars) as $k=>$FS_Var){
+				if ($k && $FS_Var){ //忽略第一行和空行
+					$var = explode(",", $FS_Var);
+					if (isset($var[3]))
+						$this->_data[$var[0]][$var[3]][$var[2]][] = $var[1];	
+				}	
 			}
-			echo "<h2>== 全局变量  global_getvar ==</h2>";
+			$check = ["mod_commands"=>1,"mod_callcenter"=>1,"mod_dptools"=>1,"mod_console"=>1,"mod_curl"=>1,"mod_db"=>1,"mod_event_socket"=>1,"mod_hash"=>1,"mod_local_stream"=>1,"mod_sofia"=>1,"mod_xml_cdr"=>1];
+			$str = "<p class='pleft'> == 模块信息  modules ==</p>";
 			foreach ($this->_data as $k=>$v){
-				if (is_numeric($k))
-					echo "<li>&nbsp; &nbsp; $v</li>";
-					else
-						echo "<li><b>$k :</b> $v</li>";
+				$str .= "<p class=pcenter><span class='bgblue bold16'> &nbsp; $k &nbsp; </span></p>";
+				foreach ($v as $k1=>$v1){
+					$str .=  "<li><b>$k1 :</b></li>";
+					foreach ($v1 as $k2=>$v2){
+						if (isset($check[$k2])) unset($check[$k2]);
+						$str .=  "<span class='bggreen bold12'> &nbsp;  $k2  &nbsp;  </span>".implode(" 、", $v2);
+					}
+				}
 			}
+			if (count($check)){
+				echo "<p class='pcenter bgred bold14'>Freeswitch问题：必须修正！！缺失模块：".implode(" 、", array_keys($check))."</p>";
+			}
+			echo $str;
 			$this->_data = array();
-			
+
 			$FS_Vars = $this->esl->getResponse($this->esl->sofia('status'));
-			echo "<h2>== sofia状态  sofia status ==</h2>";
-			foreach (explode("\n",$FS_Vars) as $FS_Var){
-				echo "<li>$FS_Var</li>";
-			}
-			echo "</ul>";
+			echo "<p class='pleft'> == sofia状态  sofia status ==</p><pre>";
+			echo $FS_Vars;
+			echo "</pre></ul>";
 		}
 		
 		public function restart_switch(){

@@ -130,7 +130,7 @@ class FS_Socket
 			$b = 1;
 			do{
 				$b++;
-				if ($b>500) //防止死循环
+				if ($b>1000) //防止死循环
 					break;
 				$a .= urldecode(fgets($this->connection,2048));
 			}while (strlen($a)<$contentLength);
