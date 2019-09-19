@@ -62,10 +62,12 @@ class detect_switch {
 					$external_sip_port  = $var[1];
 					elseif($var[0]=='internal_sip_port')
 					$internal_sip_port   = $var[1];
+					elseif($var[0]=='default_provider')
+					$default_provider    = $var[1];
 				}
 			}
 			if ($conf_dir){
-				$sql ="update fs_setting set `version` ='$FS_Version',`core_uuid`='$core_uuid', `recordings_dir`='$recordings_dir',  `sounds_dir`='$sounds_dir', `conf_dir`='$conf_dir',`log_dir`='$log_dir',`external_sip_port`='$external_sip_port',`internal_sip_port`='$internal_sip_port' where id = $sid limit 1";
+				$sql ="update fs_setting set `version` ='$FS_Version',`core_uuid`='$core_uuid', `recordings_dir`='$recordings_dir',  `sounds_dir`='$sounds_dir', `default_provider`='$default_provider',`conf_dir`='$conf_dir',`log_dir`='$log_dir',`external_sip_port`='$external_sip_port',`internal_sip_port`='$internal_sip_port' where id = $sid limit 1";
 				$return = $mysqli->query($sql);
 				if ($return)
 					return true;
@@ -121,7 +123,23 @@ class detect_switch {
 			}
 			echo $str;
 			$this->_data = array();
-
+			$FS_Vars = $this->esl->getResponse($this->esl->global_getvar());
+			foreach (explode("\n",$FS_Vars) as $FS_Var){
+				$var = explode("=", $FS_Var);
+				if (isset($var[1]))
+					$this->_data[$var[0]] = $var[1];
+					else
+						$this->_data[] = $FS_Var;
+			}
+			echo "<p class='pleft'> == 全局变量  global_getvar ==</p>";
+			foreach ($this->_data as $k=>$v){
+				if (is_numeric($k))
+					echo "<li>&nbsp; &nbsp; $v</li>";
+					else
+						echo "<li><b>$k :</b> $v</li>";
+			}
+			$this->_data = array();
+			
 			$FS_Vars = $this->esl->getResponse($this->esl->sofia('status'));
 			echo "<p class='pleft'> == sofia状态  sofia status ==</p><pre>";
 			echo $FS_Vars;

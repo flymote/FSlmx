@@ -178,6 +178,8 @@ CREATE TABLE `fs_setting` (
   `enabled` tinyint(1) unsigned NOT NULL DEFAULT '0' COMMENT '0 无效 1 有效 9 主控',
   `version` varchar(150) DEFAULT NULL,
   `recordings_dir` varchar(100) DEFAULT NULL,
+  `sounds_dir` varchar(100) DEFAULT NULL,
+  `default_provider` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `enabled` (`enabled`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
