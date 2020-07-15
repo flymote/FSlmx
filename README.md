@@ -19,8 +19,7 @@ FreeSWITCH GUI 简体中文GUI for PHP (UTF8)
 
 1、安装FS，这按FS的安装说明 https://freeswitch.org/confluence/display/FREESWITCH/Installation 
 
-我的个人安装小记 https://blog.csdn.net/onebird_lmx/article/details/107353692 https://blog.csdn.net/onebird_lmx/article/details/107353692
-配置使用FS小记 https://blog.csdn.net/onebird_lmx/article/details/107354258
+并附上安装小记： [FS1.10版本](https://blog.csdn.net/onebird_lmx/article/details/107353334) [FS1.8及1.6版本](https://blog.csdn.net/onebird_lmx/article/details/107353692) [配置使用FS小记](https://blog.csdn.net/onebird_lmx/article/details/107354258)
 
 2、本系统的安装使用，需确保FS的ESL可用，否则无法进行FS的管理控制；这提供两种方式，1个是允许外部IP连接到event_socket，1个是设置domains和cidr，允许连入的IP，具体配置的我的个人安装小记有说明
 
